@@ -1,0 +1,183 @@
+/* ARLAF 控制台全局样式 */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: #f5f6fa;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 侧边栏：深空渐变 ===== */
+.arlaf-sider {
+  background: linear-gradient(180deg, #16143a 0%, #2b2660 55%, #1e1b4b 100%) !important;
+  box-shadow: 4px 0 24px rgba(22, 20, 58, 0.35);
+}
+
+.arlaf-logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 22px 18px 18px;
+}
+
+.arlaf-logo-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+  flex-shrink: 0;
+}
+
+.arlaf-logo-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.arlaf-logo-sub {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+/* ===== 顶栏：玻璃拟态 ===== */
+.arlaf-header {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #edeff5;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px !important;
+  height: 60px !important;
+  line-height: normal !important;
+}
+
+/* ===== 仪表盘 Hero ===== */
+.arlaf-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 34px 38px;
+  color: #fff;
+  background: linear-gradient(118deg, #4f46e5 0%, #7c3aed 48%, #2563eb 100%);
+  box-shadow: 0 14px 34px rgba(79, 70, 229, 0.28);
+}
+
+.arlaf-hero::after,
+.arlaf-hero::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.arlaf-hero::after {
+  right: -70px;
+  top: -90px;
+  width: 280px;
+  height: 280px;
+}
+
+.arlaf-hero::before {
+  right: 120px;
+  bottom: -130px;
+  width: 240px;
+  height: 240px;
+}
+
+.arlaf-hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  letter-spacing: 0.3px;
+}
+
+.arlaf-hero-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 640px;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+
+/* ===== 页面标题 ===== */
+.arlaf-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2333;
+  margin: 0;
+}
+
+.arlaf-page-desc {
+  color: #6b7280;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ===== 统计气泡 ===== */
+.arlaf-stat-bubble {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  flex-shrink: 0;
+}
+
+/* ===== 卡片质感 ===== */
+.arlaf-card {
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.arlaf-card-hover:hover {
+  box-shadow: 0 10px 28px rgba(31, 35, 51, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+/* 环境卡顶部渐变条 */
+.arlaf-env-strip {
+  height: 5px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4);
+  margin: -1px -1px 0;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d3d6e0;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b9bdc9;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
