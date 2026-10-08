@@ -9,6 +9,7 @@ import { api } from '../api/client'
 import ExperienceBrowser from '../components/ExperienceBrowser'
 import LaunchMatchModal from '../components/LaunchMatchModal'
 import PageHeader from '../components/PageHeader'
+import WorkspaceManager from '../components/WorkspaceManager'
 import { MATCH_STATUS_LABELS, TOPOLOGY_LABELS } from '../i18n'
 
 function EnvMatchesTable({ environmentId }: { environmentId: string }) {
@@ -146,6 +147,13 @@ export default function EnvironmentDetailPage() {
               key: 'matches',
               label: '对局记录',
               children: <EnvMatchesTable environmentId={env.id} />,
+            },
+            {
+              key: 'workspace',
+              label: '智能体工作区',
+              children: (
+                <WorkspaceManager environmentId={env.id} env={env.config} />
+              ),
             },
             {
               key: 'experience',

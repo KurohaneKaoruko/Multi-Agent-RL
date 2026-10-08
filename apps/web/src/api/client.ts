@@ -80,6 +80,22 @@ export const api = {
     get: (id: string) => http<MatchDetail>(`/matches/${id}`),
     events: (id: string, since = 0) => http<MatchEventsResponse>(`/matches/${id}/events?since=${since}`),
   },
+  workspaces: {
+    files: (envId: string, agentId: string) =>
+      http<{ files: Array<{ path: string; size: number }> }>(`/workspaces/${envId}/${agentId}/files`),
+    readFile: (envId: string, agentId: string, path: string) =>
+      http<{ path: string; content: string }>(
+        `/workspaces/${envId}/${agentId}/file?path=${encodeURIComponent(path)}`,
+      ),
+    saveFile: (envId: string, agentId: string, path: string, content: string) =>
+      http<{ ok: boolean }>(`/workspaces/${envId}/${agentId}/file`, { method: 'PUT', body: { path, content } }),
+    importFiles: (envId: string, agentId: string, files: Array<{ path: string; content: string }>) =>
+      http<{ ok: boolean; imported: number }>(`/workspaces/${envId}/${agentId}/import`, {
+        method: 'POST',
+        body: { files },
+      }),
+    exportUrl: (envId: string, agentId: string) => `/api/workspaces/${envId}/${agentId}/export`,
+  },
   stats: (environmentId: string) => http<{ stats: WinStatEntry[] }>(`/stats?environmentId=${environmentId}`),
   experience: {
     list: (query: { environmentId?: string; agentId?: string }) => {

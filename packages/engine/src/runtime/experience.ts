@@ -6,6 +6,7 @@ import { newId } from '@marl/shared'
 import { completeStructured, StructuredOutputError } from '../llm/structured'
 import type { LLMClient } from '../llm/types'
 import type { EmitEvent } from './agent'
+import type { WorkspaceController } from './workspace'
 
 export interface ExperienceDocRecord {
   id: string
@@ -130,26 +131,49 @@ export interface InjectionResult {
 }
 
 /**
- * 经验注入（7.3）：SKILLS 全量（截断保头）+ 近期 MEMORY 优先（滑动窗口），
- * 总量受 token 预算约束（chars ≈ tokens × 2.5）。无经验返回 undefined。
+ * 经验注入（7.3）：优先读取工作区中的 SKILLS.md / MEMORY.md（用户可直接编辑的「活的」经验文件）；
+ * 工作区没有时回退到经验存储（ExperienceStore 历史）。
+ * 总量受 token 预算约束（chars ≈ tokens × 2.5），注入概况记入事件流。
  */
 export async function injectExperience(deps: {
   env: EnvironmentConfig
   agentId: string
-  store: ExperienceStore
+  store?: ExperienceStore
+  workspace?: WorkspaceController
   emit: EmitEvent
 }): Promise<InjectionResult | undefined> {
-  const { env, agentId, store, emit } = deps
+  const { env, agentId, store, workspace, emit } = deps
   if (!env.experience.enabled) return undefined
   const budgetChars = Math.floor(env.experience.tokenBudget * 2.5)
-  const skills = await readAllSkills(store, env.id, agentId)
-  const memories = await readRecentMemories(store, env.id, agentId, env.experience.recentMemoryLimit)
-  if (skills.length === 0 && memories.length === 0) return undefined
 
-  let memoryText = memories.map((m) => m.content).join('\n\n')
+  let skillsText = ''
+  let memoryText = ''
+  let memoryCount = 0
+  let source: 'workspace' | 'store' = 'store'
+
+  // 1) 工作区文件优先（用户可直接编辑的活文件）
+  if (workspace) {
+    const skillsFile = await workspace.readFile('SKILLS.md').catch(() => '')
+    const memoryFile = await workspace.readFile('MEMORY.md').catch(() => '')
+    if (skillsFile.trim() || memoryFile.trim()) {
+      skillsText = skillsFile
+      memoryText = memoryFile
+      memoryCount = memoryFile.split(/\n##\s/).filter((s) => s.trim()).length
+      source = 'workspace'
+    }
+  }
+  // 2) 回退：经验存储
+  if (!skillsText && !memoryText && store) {
+    const skills = await readAllSkills(store, env.id, agentId)
+    const memories = await readRecentMemories(store, env.id, agentId, env.experience.recentMemoryLimit)
+    skillsText = skills.map((s) => s.content).join('\n\n')
+    memoryText = memories.map((m) => m.content).join('\n\n')
+    memoryCount = memories.length
+  }
+  if (!skillsText && !memoryText) return undefined
+
   if (memoryText.length > budgetChars) memoryText = memoryText.slice(0, budgetChars)
   const remaining = Math.max(0, budgetChars - memoryText.length)
-  let skillsText = skills.map((s) => s.content).join('\n\n')
   if (skillsText.length > remaining) skillsText = skillsText.slice(0, remaining)
 
   const injectedChars = memoryText.length + skillsText.length
@@ -159,7 +183,7 @@ export async function injectExperience(deps: {
   const result: InjectionResult = {
     block: parts.join('\n\n'),
     skillsChars: skillsText.length,
-    memoryCount: memories.length,
+    memoryCount,
     injectedChars,
     budgetChars,
   }
@@ -171,9 +195,24 @@ export async function injectExperience(deps: {
       memoryCount: result.memoryCount,
       injectedChars: result.injectedChars,
       budgetChars: result.budgetChars,
+      source,
     },
   })
   return result
+}
+
+/** 把总结产物写入工作区（「活的」经验文件）：SKILLS.md 覆盖为最新技能，MEMORY.md 追加带时间戳的情景条目 */
+/** 把总结产物写入工作区（「活的」经验文件）：SKILLS.md 覆盖为最新技能，MEMORY.md 追加带时间戳的情景条目 */
+export async function writeExperienceToWorkspace(
+  workspace: WorkspaceController,
+  summary: ExperienceSummary,
+): Promise<void> {
+  const existingMemory = await workspace.readFile('MEMORY.md').catch(() => '')
+  // MEMORY.md 过长时仅保留最近一半，避免无限膨胀
+  const trimmed = existingMemory.length > 20000 ? existingMemory.slice(existingMemory.length - 20000) : existingMemory
+  const dated = `## ${new Date().toLocaleString('zh-CN')}\n${summary.memory}`
+  await workspace.writeFile('MEMORY.md', trimmed ? `${trimmed}\n\n${dated}` : dated)
+  await workspace.writeFile('SKILLS.md', summary.skills)
 }
 
 /** 经验总结结构（7.1） */

@@ -8,6 +8,7 @@ const ALL_TYPES = [
   'round.completed',
   'agent.action_started',
   'agent.action',
+  'agent.tool',
   'artifact.delivered',
   'access.denied',
   'injection.recorded',
@@ -30,6 +31,8 @@ function sampleEvent(type: (typeof ALL_TYPES)[number]): MatchEvent {
       return { type, payload: { agentId: 'a', round: 1 } }
     case 'agent.action':
       return { type, payload: { agentId: 'a', round: 1, content: '文本' } }
+    case 'agent.tool':
+      return { type, payload: { agentId: 'a', round: 1, tool: 'read_file', path: 'notes.md', ok: true, detail: '' } }
     case 'artifact.delivered':
       return {
         type,

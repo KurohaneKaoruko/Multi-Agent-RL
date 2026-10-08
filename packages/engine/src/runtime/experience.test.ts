@@ -23,7 +23,7 @@ function mockBinding(agentId: string, script: unknown[]): { agentId: string; mod
 const summaryOf = (tag: string) =>
   JSON.stringify({ memory: `记忆-${tag}`, skills: `技能-${tag}`, changesSummary: `总结-${tag}` })
 
-function envWithExperience(overrides: Record<string, unknown> = {}) {
+function envWithExperience(overrides: Record<string, unknown> = {}): import('@marl/shared').EnvironmentConfig {
   return {
     id: 'env-exp',
     name: '进化测试',
@@ -38,7 +38,8 @@ function envWithExperience(overrides: Record<string, unknown> = {}) {
       { id: 'b', name: 'B', roleId: 'r2', startRound: 1 },
     ],
     turns: { rounds: 1, order: ['a', 'b'] },
-    workspaceTemplate: { files: [] },
+    toolsEnabled: true,
+    workspaceTemplate: { mode: 'private' as const, files: [] },
     exchanges: [],
     outcome: { mode: 'rule' as const, evaluator: 'fixed', params: {} },
     experience: { enabled: true, tokenBudget: 2000, recentMemoryLimit: 3 },

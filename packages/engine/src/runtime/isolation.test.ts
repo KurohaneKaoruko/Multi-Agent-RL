@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import type { MatchEventEnvelope, ModelConfig } from '@marl/shared'
+import type { EnvironmentConfig, MatchEventEnvelope, ModelConfig } from '@marl/shared'
 import { WorkspaceController, WorkspaceAccessError } from './workspace'
 import { AgentRuntime } from './agent'
 import { MockProvider } from '../llm/mock'
@@ -22,7 +22,7 @@ function mockBinding(agentId: string, script: unknown[]): { agentId: string; mod
   }
 }
 
-function env1v1(deliverAtRound = 1) {
+function env1v1(deliverAtRound = 1): EnvironmentConfig {
   return {
     id: 'env-iso',
     name: '隔离测试',
@@ -37,7 +37,8 @@ function env1v1(deliverAtRound = 1) {
       { id: 'b', name: 'B', roleId: 'detector', startRound: 1 },
     ],
     turns: { rounds: 2, order: ['a', 'b'] },
-    workspaceTemplate: { files: [{ path: 'brief.md', content: '任务说明' }] },
+    toolsEnabled: true,
+    workspaceTemplate: { mode: 'private', files: [{ path: 'brief.md', content: '任务说明' }] },
     exchanges: [{ id: 'ex1', artifact: 'manuscript', fromAgentId: 'a', toAgentId: 'b', deliverAtRound }],
     outcome: { mode: 'rule' as const, evaluator: 'fixed', params: {} },
     experience: { enabled: false, tokenBudget: 2000, recentMemoryLimit: 3 },
@@ -51,10 +52,10 @@ describe('工作区分配（6.1）', () => {
       const wsA = await WorkspaceController.allocate(
         base,
         'a',
-        { files: [{ path: 'brief.md', content: '任务说明' }] },
+        { mode: 'private' as const, files: [{ path: 'brief.md', content: '任务说明' }] },
         () => {},
       )
-      const wsB = await WorkspaceController.allocate(base, 'b', { files: [] }, () => {})
+      const wsB = await WorkspaceController.allocate(base, 'b', { mode: 'private' as const, files: [] }, () => {})
       expect(wsA.rootDir).not.toBe(wsB.rootDir)
       await expect(wsA.readFile('brief.md')).resolves.toBe('任务说明')
       // b 的工作区无此文件 → 物理隔离
@@ -68,7 +69,7 @@ describe('工作区分配（6.1）', () => {
     const base = './.tmp-arlaf-ws-rel'
     try {
       const denied: string[] = []
-      const ws = await WorkspaceController.allocate(base, 'a', { files: [{ path: 'README.md', content: 'x' }] }, () => {
+      const ws = await WorkspaceController.allocate(base, 'a', { mode: 'private' as const, files: [{ path: 'README.md', content: 'x' }] }, () => {
         denied.push('x')
       })
       expect(path.isAbsolute(ws.rootDir)).toBe(true)
@@ -85,7 +86,7 @@ describe('受控文件工具与审计（6.3）', () => {
     const base = await mkdtemp(path.join(tmpdir(), 'arlaf-ws2-'))
     try {
       const denied: Array<{ op: string; path: string }> = []
-      const ws = await WorkspaceController.allocate(base, 'a', { files: [] }, (op, p) => denied.push({ op, path: p }))
+      const ws = await WorkspaceController.allocate(base, 'a', { mode: 'private' as const, files: [] }, (op, p) => denied.push({ op, path: p }))
       await ws.writeFile('notes/a.md', '内容')
       await expect(ws.readFile('notes/a.md')).resolves.toBe('内容')
       // 路径逃逸（对手工作区/系统目录）
@@ -167,7 +168,7 @@ describe('交换物投递（6.2）', () => {
     const base = await mkdtemp(path.join(tmpdir(), 'arlaf-c-'))
     try {
     const client = new MockProvider({ script: ['B1', 'B2'] })
-      const ws = await WorkspaceController.allocate(base, 'b', { files: [] }, () => {})
+      const ws = await WorkspaceController.allocate(base, 'b', { mode: 'private' as const, files: [] }, () => {})
       const agent = new AgentRuntime(
         { id: 'b', name: 'B', roleId: 'detector', startRound: 1 },
         { id: 'detector', name: '辨别者', systemPrompt: 's', goal: 'g', answerFormat: 'free' },
@@ -197,7 +198,7 @@ describe('交换物投递（6.2）', () => {
   it('act 清洗模型输出的 <think> 推理块（stripThinkTags）', async () => {
     const base = await mkdtemp(path.join(tmpdir(), 'arlaf-think-'))
     try {
-      const ws = await WorkspaceController.allocate(base, 'a', { files: [] }, () => {})
+      const ws = await WorkspaceController.allocate(base, 'a', { mode: 'private' as const, files: [] }, () => {})
       const mkAgent = (script: string[]): AgentRuntime =>
         new AgentRuntime(
           { id: 'a', name: 'A', roleId: 'r', startRound: 1 },

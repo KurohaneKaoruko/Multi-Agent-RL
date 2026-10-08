@@ -32,7 +32,8 @@ function validEnv(): EnvironmentConfig {
       { id: 'detector-a', name: '辨别者 A', roleId: 'detector', startRound: 3 },
     ],
     turns: { rounds: 3, order: ['writer-a', 'detector-a'] },
-    workspaceTemplate: { files: [] },
+    toolsEnabled: true,
+    workspaceTemplate: { mode: 'private', files: [] },
     exchanges: [
       { id: 'ex-1', artifact: 'manuscript', fromAgentId: 'writer-a', toAgentId: 'detector-a', deliverAtRound: 2 },
     ],

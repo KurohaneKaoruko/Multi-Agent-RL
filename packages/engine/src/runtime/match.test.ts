@@ -24,7 +24,8 @@ function testEnv(overrides: Partial<EnvironmentConfig> = {}): EnvironmentConfig 
       { id: 'b', name: 'B', roleId: 'r2', startRound: 1 },
     ],
     turns: { rounds: 2, order: ['a', 'b'] },
-    workspaceTemplate: { files: [] },
+    toolsEnabled: true,
+    workspaceTemplate: { mode: 'private', files: [] },
     exchanges: [],
     outcome: { mode: 'rule', evaluator: 'test-fixed', params: {} },
     experience: { enabled: false, tokenBudget: 2000, recentMemoryLimit: 3 },
@@ -100,6 +101,7 @@ describe('回合调度器（4.2）', () => {
         { id: 'c', name: 'C', roleId: 'r1', startRound: 1 },
       ],
       turns: { rounds: 1, order: ['a', 'b', 'c'] },
+      toolsEnabled: true,
     })
     const handle = createMatch(env, {
       bindings: [mockBinding('a', ['A1']), mockBinding('b', ['B1']), mockBinding('c', ['C1'])],
@@ -126,6 +128,7 @@ describe('回合调度器（4.2）', () => {
   it('交换物依赖分批：b 等待 a 产出后行动，并发上限生效', async () => {
     const env = testEnv({
       turns: { rounds: 1, order: ['a', 'b'] },
+      toolsEnabled: true,
       exchanges: [{ id: 'ex1', artifact: 'manuscript', fromAgentId: 'a', toAgentId: 'b', deliverAtRound: 1 }],
     })
     const handle = createMatch(env, {
@@ -158,6 +161,7 @@ describe('起始轮次（对抗时序）', () => {
   it('辨别者从第 2 轮登场：第 1 轮不行动，投递仍发生在第 1 轮末', async () => {
     const env = testEnv({
       turns: { rounds: 2, order: ['a', 'b'] },
+      toolsEnabled: true,
       agents: [
         { id: 'a', name: 'A', roleId: 'r1', startRound: 1 },
         { id: 'b', name: 'B', roleId: 'r2', startRound: 2 },

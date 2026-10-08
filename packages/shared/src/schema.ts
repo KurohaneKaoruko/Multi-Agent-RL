@@ -64,7 +64,11 @@ export const WorkspaceFileSchema = z.object({
   path: z.string().min(1),
   content: z.string(),
 })
+/** 工作区模式：private=各智能体独立工作区（对抗默认）；shared=全体共享（协作） */
+export const WorkspaceModeSchema = z.enum(['private', 'shared'])
+
 export const WorkspaceTemplateSchema = z.object({
+  mode: WorkspaceModeSchema.default('private'),
   files: z.array(WorkspaceFileSchema).default([]),
 })
 export type WorkspaceTemplate = z.infer<typeof WorkspaceTemplateSchema>
@@ -133,7 +137,9 @@ const EnvironmentConfigObject = z.object({
   roles: z.array(RoleSchema).min(1),
   agents: z.array(AgentSlotSchema).min(2),
   turns: TurnStructureSchema,
-  workspaceTemplate: WorkspaceTemplateSchema.default({ files: [] }),
+  workspaceTemplate: WorkspaceTemplateSchema.default({ mode: 'private', files: [] }),
+  /** 是否允许智能体在工作区内使用文件工具（读/写/列表），默认开启 */
+  toolsEnabled: z.boolean().default(true),
   exchanges: z.array(ExchangeSchema).default([]),
   outcome: OutcomeSchema,
   experience: ExperienceConfigSchema.default({}),
