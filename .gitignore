@@ -1,0 +1,52 @@
+# ===== Secrets / environment =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!*.pub
+secrets/
+
+# ===== Dependencies =====
+node_modules/
+vendor/
+.venv/
+venv/
+
+# ===== Build output =====
+dist/
+build/
+out/
+target/
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# ===== Logs & temp =====
+*.log
+logs/
+tmp/
+.cache/
+
+# ===== Project: ARLAF =====
+data/
+apps/server/openapi.json
+*.tsbuildinfo
+
+
+# ===== Test / coverage =====
+coverage/
+.nyc_output/
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Editors =====
+.idea/
+.vscode/
+*.swp
+*.swo
