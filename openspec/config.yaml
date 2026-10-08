@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Multi-Agent-RL：多智能体强化学习框架，包含两大范式：
+  1. Agent-RLAF（对抗反馈）：智能体在互斥胜负的对抗环境中进化（如生成-辨别、红队蓝队攻防）；
+  2. Agent-RLCF（协作反馈）：智能体围绕共同目标协作（如结对写作工坊、结对开发），AI 裁判为团队评分。
+  技术栈（用户已确认）：全栈 Node.js + TypeScript（核心引擎以 TS 库实现，经 API 服务对外提供；
+  模型调用均为 I/O 密集，无需原生性能层）；Web 控制台 React + Vite + AntD。
+  OpenSpec 产出物使用中英双语撰写，优先中文（保留英文技术术语）。
+  项目为绿地（greenfield）：除 openspec/ 与 .opencode/ 外暂无代码，规划不得假设既有实现。
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
