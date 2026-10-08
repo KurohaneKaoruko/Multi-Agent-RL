@@ -27,6 +27,7 @@ import { closeDb, openDb, type Db } from './db/db'
 import { latestSeq, listEvents } from './db/events'
 import { MatchManager } from './services/match-manager'
 import * as repos from './services/repos'
+import { registerWorkspaceRoutes } from './services/workspace-routes'
 import { parseBody, zodBody } from './validation'
 import { registerMatchWs } from './ws'
 import { BUILTIN_TEMPLATES, instantiateTemplate, type BuiltinTemplate } from './templates'
@@ -112,6 +113,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(swaggerUi, { routePrefix: '/api/docs' })
   await app.register(websocket)
   registerMatchWs(app, db)
+  registerWorkspaceRoutes(app, options.dataDir)
 
   // ---- 校验错误：中文、字段级（复用 shared Zod） ----
   const zodSchemas = new Map<string, z.ZodType>()

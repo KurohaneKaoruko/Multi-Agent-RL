@@ -75,6 +75,15 @@ export const InjectionRecordedPayload = z.object({
   memoryCount: z.number().int(),
   injectedChars: z.number().int(),
   budgetChars: z.number().int(),
+  source: z.enum(['workspace', 'store']).optional(),
+})
+export const AgentToolPayload = z.object({
+  agentId: z.string(),
+  round: z.number().int(),
+  tool: z.enum(['read_file', 'write_file', 'list_files']),
+  path: z.string().optional(),
+  ok: z.boolean(),
+  detail: z.string().optional(),
 })
 export const LlmRetryPayload = z.object({
   purpose: z.enum(['agent', 'judge', 'summarize']),
@@ -112,6 +121,7 @@ export const MatchEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('artifact.delivered'), payload: ArtifactDeliveredPayload }),
   z.object({ type: z.literal('access.denied'), payload: AccessDeniedPayload }),
   z.object({ type: z.literal('injection.recorded'), payload: InjectionRecordedPayload }),
+  z.object({ type: z.literal('agent.tool'), payload: AgentToolPayload }),
   z.object({ type: z.literal('llm.retry'), payload: LlmRetryPayload }),
   z.object({ type: z.literal('judge.invalid_output'), payload: JudgeInvalidOutputPayload }),
   z.object({ type: z.literal('judge.verdict'), payload: JudgeVerdictPayload }),

@@ -37,3 +37,21 @@ Agent 获取的一切信息 SHALL 来自两个渠道：环境注入的角色上�
 #### Scenario: 审计对局信息流
 - **WHEN** 用户查看一个已完成对局的隔离审计记录
 - **THEN** 可以看到该对局中全部交换物投递记录与全部被拒绝的越权访问记录
+
+### Requirement: 工作区文件工具 (Workspace File Tools)
+智能体 SHALL 能通过工具协议（read_file / write_file / list_files）读写自己工作区内的文件；每轮工具调用次数有上限；全部调用（含越权拒绝）SHALL 记入事件流。环境 SHALL 可按需关闭工具能力。
+
+#### Scenario: 智能体使用工具读写工作区
+- **WHEN** 智能体在行动中调用 write_file 写入自己工作区的文件，随后调用 read_file 读取
+- **THEN** 两次调用均成功且产生 agent.tool 事件，文件内容真实写入工作区
+
+#### Scenario: 关闭工具能力
+- **WHEN** 环境配置关闭工具能力（toolsEnabled=false）
+- **THEN** 智能体回复中的工具调用块不被执行，原样作为行动内容
+
+### Requirement: 共享工作区 (Shared Workspace)
+环境 SHALL 支持配置共享工作区模式（workspaceTemplate.mode = "shared"）：全体智能体读写同一目录，用于协作场景。对抗环境默认使用独立工作区。
+
+#### Scenario: 协作共享工作区
+- **WHEN** 协作环境配置为共享工作区，智能体 A 写入共享文件，智能体 B 读取
+- **THEN** B 能读到 A 写入的内容，且不产生越权拒绝记录

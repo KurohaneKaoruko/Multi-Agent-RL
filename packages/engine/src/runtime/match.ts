@@ -9,7 +9,7 @@ import type {
 } from '@marl/shared'
 import { JUDGE_AGENT_ID, MatchOptionsSchema, newId } from '@marl/shared'
 import type { ExperienceStore } from './experience'
-import { injectExperience, summarizeExperience } from './experience'
+import { injectExperience, summarizeExperience, writeExperienceToWorkspace } from './experience'
 import { JudgeFailureError, runJudge } from './judge'
 import { builtinRuleEvaluators, type RuleEvaluator, type RuleOutcome } from './rules'
 import { AgentRuntime, createLLMClient, type EmitEvent } from './agent'
@@ -105,25 +105,56 @@ async function runMatch(
       },
     })
 
-    // ---- 工作区隔离分配（6.1）----
+    // ---- 工作区分配（6.1 + 共享模式 + 持久化种子）----
+    const workspaceMode = env.workspaceTemplate.mode ?? 'private'
+    const persistentBase = path.join(opts.dataDir, 'workspaces', env.id)
     const workspaceBase = path.join(opts.dataDir, 'matches', matchId, 'workspaces')
     const workspaces = new Map<string, WorkspaceController>()
-    for (const agent of env.agents) {
-      workspaces.set(
-        agent.id,
-        await WorkspaceController.allocate(workspaceBase, agent.id, env.workspaceTemplate, (op, relPath) => {
+    if (workspaceMode === 'shared') {
+      // 协作共享工作区：全体智能体读写同一目录；种子来自该环境的共享持久化工作区
+      const shared = await WorkspaceController.allocate(
+        workspaceBase,
+        '_shared',
+        env.workspaceTemplate,
+        (op, relPath) => {
           emit({
             type: 'access.denied',
             payload: {
-              agentId: agent.id,
+              agentId: '_shared',
               round: currentRoundRef.round,
               path: relPath,
               operation: op,
-              reason: '越权访问其他 Agent 工作区或工作区外路径',
+              reason: '越权访问工作区外路径',
             },
           })
-        }),
+        },
+        { shared: true, seedFromDir: path.join(persistentBase, '_shared') },
       )
+      for (const agent of env.agents) workspaces.set(agent.id, shared)
+    } else {
+      for (const agent of env.agents) {
+        workspaces.set(
+          agent.id,
+          await WorkspaceController.allocate(
+            workspaceBase,
+            agent.id,
+            env.workspaceTemplate,
+            (op, relPath) => {
+              emit({
+                type: 'access.denied',
+                payload: {
+                  agentId: agent.id,
+                  round: currentRoundRef.round,
+                  path: relPath,
+                  operation: op,
+                  reason: '越权访问其他 Agent 工作区或工作区外路径',
+                },
+              })
+            },
+            { seedFromDir: path.join(persistentBase, agent.id) },
+          ),
+        )
+      }
     }
 
     // ---- Agent 运行时 + 模型绑定（3.1 / self-play 支持同一配置多实例）----
@@ -147,11 +178,12 @@ async function runMatch(
               payload: { purpose: 'agent', agentId: agent.id, attempt: info.attempt, delayMs: info.delayMs, error: info.error },
             })
           },
+          env.toolsEnabled ?? true,
         ),
       )
     }
 
-    // ---- 经验注入（7.3）----
+    // ---- 经验注入（7.3）：工作区「活的」经验文件优先，存储历史兜底 ----
     const experienceBlocks = new Map<string, string | undefined>()
     if (opts.experienceStore) {
       for (const agent of env.agents) {
@@ -159,6 +191,7 @@ async function runMatch(
           env,
           agentId: agent.id,
           store: opts.experienceStore,
+          workspace: workspaces.get(agent.id),
           emit,
         })
         experienceBlocks.set(agent.id, injected?.block)
@@ -280,7 +313,7 @@ async function runMatch(
       // verdict 已由 runJudge 记入事件流（judge.verdict）
     }
 
-    // ---- 经验总结（7.1/7.2/7.4）----
+    // ---- 经验总结（7.1/7.2/7.4）+ 工作区写回 ----
     if (opts.experienceStore && env.experience.enabled) {
       for (const agent of env.agents) {
         const agentRuntime = agents.get(agent.id)!
@@ -289,7 +322,7 @@ async function runMatch(
           artifact: d.artifact,
           preview: d.content.slice(0, 160),
         }))
-        await summarizeExperience({
+        const summary = await summarizeExperience({
           env,
           matchId,
           agentId: agent.id,
@@ -301,6 +334,26 @@ async function runMatch(
           outcomeLine,
           emit,
         })
+        if (summary) {
+          // 写回「活的」工作区文件：本场工作区 + 持久化工作区（用户可查看/编辑，影响下一场）
+          const agentWs = workspaces.get(agent.id)!
+          await writeExperienceToWorkspace(agentWs, summary)
+          const persistent = await WorkspaceController.openExisting(
+            path.join(persistentBase, workspaceMode === 'shared' ? '_shared' : agent.id),
+            agent.id,
+          )
+          await writeExperienceToWorkspace(persistent, summary)
+        }
+      }
+      // 对局工作区整体回写持久化工作区（智能体工具写入的文件得以保留）
+      for (const agent of env.agents) {
+        if (workspaceMode === 'shared') break // 共享工作区在总结阶段已写回
+        const ws = workspaces.get(agent.id)!
+        await ws.copyTo(path.join(persistentBase, agent.id))
+      }
+      if (workspaceMode === 'shared') {
+        const sharedWs = workspaces.get(env.agents[0]!.id)!
+        await sharedWs.copyTo(path.join(persistentBase, '_shared'))
       }
     }
 

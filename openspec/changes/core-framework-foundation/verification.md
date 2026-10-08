@@ -1,5 +1,7 @@
 # 验收核对清单（17.3）
 
+> 2026-10-09 追加：工作区体系（工具/共享/持久化管理）随任务 18.x 落地，核对清单同步扩展。
+
 对照 5 份 spec delta 的全部 Scenario 逐条核对。证据类型：`auto` = 自动化测试（`pnpm test`），`ui` = 浏览器实测（2026-10-09，mock provider），`manual` = 待真实 API 手动验证。
 
 ## adversarial-environments
@@ -69,3 +71,13 @@
 ## 待手动验证
 
 - **17.2**：真实 OpenAI 兼容端点冒烟（单 API 自对抗 + 双模型对抗）——需要用户配置真实 API Key 后执行（见 `scripts` 说明：在模型管理页录入真实端点后发起对局即可）。
+
+## 追加：工作区体系（2026-10-09）
+
+| Scenario | 证据 |
+|---|---|
+| 智能体使用工具读写工作区 | auto（tools.test：写→读→最终回复；agent.tool 事件；文件真实落盘） |
+| 关闭工具能力 | auto（tools.test：toolsEnabled=false 时工具块原样保留、不执行） |
+| 协作共享工作区 | auto（tools.test：共享目录 a 写 b 读；match 内 a 写入 b 通过工具读到） |
+| 智能体工作区管理（查看/编辑/导入/导出） | auto（workspace-routes.test：保存/列表/读取/导入/导出 zip/路径穿越拒绝） |
+| 修改作用于后续对局 | auto（match.ts：种子来自持久化工作区，结束后回写） |
