@@ -26,12 +26,6 @@ importers:
 
   apps/server:
     dependencies:
-      '@arlaf/engine':
-        specifier: workspace:*
-        version: link:../../packages/engine
-      '@arlaf/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@fastify/swagger':
         specifier: ^9.5.0
         version: 9.9.1(supports-color@10.2.2)
@@ -41,6 +35,12 @@ importers:
       '@fastify/websocket':
         specifier: ^11.1.0
         version: 11.3.3
+      '@marl/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@marl/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       better-sqlite3:
         specifier: ^12.2.0
         version: 12.11.1
@@ -78,7 +78,7 @@ importers:
       '@ant-design/icons':
         specifier: ^6.0.0
         version: 6.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@arlaf/shared':
+      '@marl/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tanstack/react-query':
@@ -121,7 +121,7 @@ importers:
 
   packages/engine:
     dependencies:
-      '@arlaf/shared':
+      '@marl/shared':
         specifier: workspace:*
         version: link:../shared
       zod:

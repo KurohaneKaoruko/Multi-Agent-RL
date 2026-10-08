@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import type { MatchEventEnvelope } from '@arlaf/shared'
+import type { MatchEventEnvelope } from '@marl/shared'
 import { openDb, closeDb, migrate, listTables } from './db'
 import { appendEvents, listEvents, latestSeq } from './events'
 

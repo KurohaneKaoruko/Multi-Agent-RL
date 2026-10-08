@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SHARED_VERSION } from '@arlaf/shared'
+import { SHARED_VERSION } from '@marl/shared'
 import { ENGINE_VERSION } from './index'
 
 describe('engine placeholder', () => {

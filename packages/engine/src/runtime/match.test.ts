@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { EnvironmentConfig, MatchEventEnvelope } from '@arlaf/shared'
+import type { EnvironmentConfig, MatchEventEnvelope } from '@marl/shared'
 import { createMatch, MatchFailedError } from './match'
 import type { RuleEvaluator } from './rules'
-import type { ModelConfig } from '@arlaf/shared'
+import type { ModelConfig } from '@marl/shared'
 
 function mockBinding(agentId: string, script: unknown[]): { agentId: string; modelConfig: ModelConfig } {
   const { baseUrl, apiKey } = { baseUrl: 'mock://arlaf', apiKey: JSON.stringify(script) }

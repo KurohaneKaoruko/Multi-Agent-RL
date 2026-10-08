@@ -1,4 +1,4 @@
-import { EnvironmentConfigSchema, newId, validateEnvironmentRefs, type EnvironmentConfig } from '@arlaf/shared'
+import { EnvironmentConfigSchema, newId, validateEnvironmentRefs, type EnvironmentConfig } from '@marl/shared'
 
 export interface BuiltinTemplate {
   templateId: string

@@ -10,7 +10,7 @@ import {
   FileExperienceStore,
   MockProvider,
   OpenAICompatibleClient,
-} from '@arlaf/engine'
+} from '@marl/engine'
 import {
   EnvironmentConfigSchema,
   EnvironmentDraftSchema,
@@ -22,7 +22,7 @@ import {
   type AgentBinding,
   type EnvironmentConfig,
   type FieldError,
-} from '@arlaf/shared'
+} from '@marl/shared'
 import { closeDb, openDb, type Db } from './db/db'
 import { latestSeq, listEvents } from './db/events'
 import { MatchManager } from './services/match-manager'

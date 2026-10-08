@@ -6,8 +6,8 @@ import type {
   MatchOptions,
   MatchResult,
   RoundEntry,
-} from '@arlaf/shared'
-import { JUDGE_AGENT_ID, MatchOptionsSchema, newId } from '@arlaf/shared'
+} from '@marl/shared'
+import { JUDGE_AGENT_ID, MatchOptionsSchema, newId } from '@marl/shared'
 import type { ExperienceStore } from './experience'
 import { injectExperience, summarizeExperience } from './experience'
 import { JudgeFailureError, runJudge } from './judge'

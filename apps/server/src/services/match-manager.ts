@@ -1,6 +1,6 @@
 import path from 'node:path'
-import type { AgentBinding, EnvironmentConfig, MatchResult } from '@arlaf/shared'
-import { createMatch, FileExperienceStore, MatchFailedError } from '@arlaf/engine'
+import type { AgentBinding, EnvironmentConfig, MatchResult } from '@marl/shared'
+import { createMatch, FileExperienceStore, MatchFailedError } from '@marl/engine'
 import type { Db } from '../db/db'
 import { appendEvents } from '../db/events'
 import { publish } from '../realtime'

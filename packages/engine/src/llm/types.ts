@@ -1,4 +1,4 @@
-import type { ModelParams } from '@arlaf/shared'
+import type { ModelParams } from '@marl/shared'
 
 /** OpenAI 兼容聊天消息 */
 export interface ChatMessage {

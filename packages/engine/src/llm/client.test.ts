@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { OpenAICompatibleClient } from './openai'
 import { MockProvider, encodeMockConfig, decodeMockScript, type MockStep } from './mock'
 import type { LLMClient, RetryInfo } from './types'
-import type { ModelConfig } from '@arlaf/shared'
+import type { ModelConfig } from '@marl/shared'
 
 function fakeConfig(baseUrl: string, apiKey = 'sk-test'): ModelConfig {
   return { id: 'm', name: 'Test', baseUrl, apiKey, model: 'test-model', params: {} }
