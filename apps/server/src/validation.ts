@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import type { FieldError } from '@arlaf/shared'
+import type { FieldError } from '@marl/shared'
 
 /** 由 shared Zod schema 生成 JSON Schema（draft-07，兼容 fastify ajv 与 OpenAPI 文档） */
 export function zodBody(schema: z.ZodType): Record<string, unknown> {

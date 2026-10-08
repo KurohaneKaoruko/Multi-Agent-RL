@@ -1,4 +1,4 @@
-import { JudgeVerdictSchema, type JudgeVerdict } from '@arlaf/shared'
+import { JudgeVerdictSchema, type JudgeVerdict } from '@marl/shared'
 import type { LLMClient } from '../llm/types'
 import { completeStructured, StructuredOutputError } from '../llm/structured'
 import type { EmitEvent } from './agent'

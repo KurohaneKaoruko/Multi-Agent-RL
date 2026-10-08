@@ -3,8 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { FastifyInstance } from 'fastify'
-import type { EnvironmentConfig, ModelConfig } from '@arlaf/shared'
-import { EnvironmentConfigSchema, validateEnvironmentRefs } from '@arlaf/shared'
+import type { EnvironmentConfig, ModelConfig } from '@marl/shared'
+import { EnvironmentConfigSchema, validateEnvironmentRefs } from '@marl/shared'
 import { buildApp, closeApp } from './app'
 import { BUILTIN_TEMPLATES, instantiateTemplate } from './templates'
 
@@ -28,7 +28,7 @@ describe('内置模板定义（11.1）', () => {
   })
 
   it('engine 用 mock provider 跑通模板完整对局（互斥胜负：识破→辨别者胜）', async () => {
-    const { createMatch } = await import('@arlaf/engine')
+    const { createMatch } = await import('@marl/engine')
     const env = instantiateTemplate('ai-flavor-adversarial', { id: 'env-tpl-run', name: '模板对局验证' })
     const mock = (script: unknown[]): ModelConfig => ({
       id: 'm',
@@ -61,7 +61,7 @@ describe('内置模板定义（11.1）', () => {
   })
 
   it('协作全流程（Agent-RLCF）：作者初稿 → 编辑意见 → 修订终稿 → 裁判团队评分', async () => {
-    const { createMatch } = await import('@arlaf/engine')
+    const { createMatch } = await import('@marl/engine')
     const env = instantiateTemplate('writing-workshop', { id: 'env-workshop-run', name: '工坊对局验证' })
     const mock = (script: unknown[]): ModelConfig => ({
       id: 'm',
@@ -118,7 +118,7 @@ describe('内置模板定义（11.1）', () => {
   })
 
   it('互斥性：辨别者被蒙骗（判 human）→ 写作者胜，双方得分之和恒为 1', async () => {
-    const { createMatch } = await import('@arlaf/engine')
+    const { createMatch } = await import('@marl/engine')
     const env = instantiateTemplate('ai-flavor-adversarial', { id: 'env-tpl-run2', name: '蒙骗验证' })
     const mock = (script: unknown[]): ModelConfig => ({
       id: 'm',

@@ -1,4 +1,4 @@
-import type { ModelConfig } from '@arlaf/shared'
+import type { ModelConfig } from '@marl/shared'
 import {
   isRetryableStatus,
   LlmHttpError,

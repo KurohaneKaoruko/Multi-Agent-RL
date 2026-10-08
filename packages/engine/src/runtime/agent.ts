@@ -1,4 +1,4 @@
-import type { AgentSlot, MatchEvent, ModelConfig, Role } from '@arlaf/shared'
+import type { AgentSlot, MatchEvent, ModelConfig, Role } from '@marl/shared'
 import type { LLMClient, CompleteOptions, RetryInfo } from '../llm/types'
 import { MockProvider, decodeMockScript } from '../llm/mock'
 import { OpenAICompatibleClient } from '../llm/openai'

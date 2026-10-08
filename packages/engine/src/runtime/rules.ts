@@ -1,4 +1,4 @@
-import type { EnvironmentConfig, RoundEntry } from '@arlaf/shared'
+import type { EnvironmentConfig, RoundEntry } from '@marl/shared'
 import { extractJson } from '../llm/structured'
 
 /** 规则判定上下文 */

@@ -1,4 +1,4 @@
-import type { MatchEventEnvelope } from '@arlaf/shared'
+import type { MatchEventEnvelope } from '@marl/shared'
 import type { Db } from './db'
 
 /**

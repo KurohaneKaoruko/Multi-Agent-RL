@@ -3,9 +3,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { FastifyInstance } from 'fastify'
-import type { EnvironmentConfig } from '@arlaf/shared'
+import type { EnvironmentConfig } from '@marl/shared'
 import { buildApp, closeApp } from './app'
-import * as engine from '@arlaf/engine'
+import * as engine from '@marl/engine'
 
 let dataDir: string
 let app: FastifyInstance

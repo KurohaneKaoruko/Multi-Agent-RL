@@ -1,11 +1,11 @@
-# @arlaf/engine
+# @marl/engine
 
 ARLAF 对局引擎核心库：事件驱动的纯库，无 HTTP 依赖，可独立测试与复用。
 行为契约见 `openspec/specs/`（match-engine / workspace-isolation / experience-evolution / adversarial-environments）。
 
 ## 核心概念
 
-- **EnvironmentConfig**（`@arlaf/shared`）：声明式对抗环境——角色、拓扑（symmetric/asymmetric/melee）、回合结构、交换物协议、判定方式。
+- **EnvironmentConfig**（`@marl/shared`）：声明式对抗环境——角色、拓扑（symmetric/asymmetric/melee）、回合结构、交换物协议、判定方式。
 - **MatchHandle**：`createMatch(env, opts)` 返回，含 `id` / `bus`（事件总线）/ `events`（AsyncIterable）/ `run()`。
 - **MatchEventBus**：全量事件缓冲 + 单调递增 `seq`；`subscribe()` 实时订阅，`snapshot(sinceSeq)` 回放/补发。
 - **AgentRuntime**：框架构造上下文（角色提示 + 经验注入 + 协议投递物），Agent 无自选信息通道（设计 D4）。
@@ -15,8 +15,8 @@ ARLAF 对局引擎核心库：事件驱动的纯库，无 HTTP 依赖，可独�
 ## 快速开始
 
 ```ts
-import { createMatch, FileExperienceStore } from '@arlaf/engine'
-import type { EnvironmentConfig, AgentBinding } from '@arlaf/shared'
+import { createMatch, FileExperienceStore } from '@marl/engine'
+import type { EnvironmentConfig, AgentBinding } from '@marl/shared'
 
 const env: EnvironmentConfig = /* 环境配置（经 shared schema 校验） */
 const bindings: AgentBinding[] = [

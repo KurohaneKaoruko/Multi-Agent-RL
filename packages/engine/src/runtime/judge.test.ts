@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MatchEvent, MatchEventEnvelope } from '@arlaf/shared'
+import type { MatchEvent, MatchEventEnvelope } from '@marl/shared'
 import { MockProvider } from '../llm/mock'
 import { runJudge, JudgeFailureError } from './judge'
 

@@ -1,5 +1,5 @@
 {
-  "name": "@arlaf/server",
+  "name": "@marl/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "gen:openapi": "tsx src/openapi-dump.ts"
   },
   "dependencies": {
-    "@arlaf/engine": "workspace:*",
-    "@arlaf/shared": "workspace:*",
+    "@marl/engine": "workspace:*",
+    "@marl/shared": "workspace:*",
     "@fastify/swagger": "^9.5.0",
     "@fastify/swagger-ui": "^6.0.0",
     "@fastify/websocket": "^11.1.0",

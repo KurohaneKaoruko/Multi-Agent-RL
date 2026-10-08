@@ -5,7 +5,7 @@ import path from 'node:path'
 import type { AddressInfo } from 'node:net'
 import type { FastifyInstance } from 'fastify'
 import WebSocket from 'ws'
-import type { EnvironmentConfig, MatchEventEnvelope } from '@arlaf/shared'
+import type { EnvironmentConfig, MatchEventEnvelope } from '@marl/shared'
 import { buildApp, closeApp } from './app'
 
 function mockModel(name: string, script: unknown[]) {

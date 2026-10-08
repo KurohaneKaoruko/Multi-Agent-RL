@@ -1,4 +1,4 @@
-// @arlaf/engine — 对局引擎核心库（纯库，无 HTTP 依赖）。
+// @marl/engine — 对局引擎核心库（纯库，无 HTTP 依赖）。
 export const ENGINE_VERSION = '0.1.0'
 
 // LLM 调用层（任务 3.x）

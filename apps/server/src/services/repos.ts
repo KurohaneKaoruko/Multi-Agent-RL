@@ -9,8 +9,8 @@ import type {
   ModelConfigInput,
   ModelConfigView,
   WinStatEntry,
-} from '@arlaf/shared'
-import { newId } from '@arlaf/shared'
+} from '@marl/shared'
+import { newId } from '@marl/shared'
 import type { Db } from '../db/db'
 
 /* ---------------- environments ---------------- */

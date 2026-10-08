@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { WorkspaceTemplate } from '@arlaf/shared'
+import type { WorkspaceTemplate } from '@marl/shared'
 
 /** 越权访问错误（Agent 视角收到的是提示文案，事件层记录详情） */
 export class WorkspaceAccessError extends Error {

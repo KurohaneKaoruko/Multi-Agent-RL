@@ -1,5 +1,5 @@
 {
-  "name": "@arlaf/engine",
+  "name": "@marl/engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@arlaf/shared": "workspace:*",
+    "@marl/shared": "workspace:*",
     "zod": "^3.25.76"
   },
   "devDependencies": {

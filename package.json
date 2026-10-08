@@ -1,5 +1,5 @@
 {
-  "name": "arlaf",
+  "name": "marl",
   "version": "0.1.0",
   "private": true,
   "description": "Multi-Agent-RL：基于对抗反馈（Agent-RLAF）与协作反馈（Agent-RLCF）的多智能体强化学习框架",
@@ -13,8 +13,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "dev:server": "pnpm --filter @arlaf/server dev",
-    "dev:web": "pnpm --filter @arlaf/web dev"
+    "dev:server": "pnpm --filter @marl/server dev",
+    "dev:web": "pnpm --filter @marl/web dev"
   },
   "devDependencies": {
     "eslint": "^9.30.0",

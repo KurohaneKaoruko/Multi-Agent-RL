@@ -1,4 +1,4 @@
-// ARLAF Web API client：以 @arlaf/shared 的 DTO 为单一类型来源（前后端同源类型）。
+// ARLAF Web API client：以 @marl/shared 的 DTO 为单一类型来源（前后端同源类型）。
 // OpenAPI 产物（src/api/schema.d.ts，由 `pnpm gen:api` 生成）作为接口契约快照保留。
 import type {
   EnvironmentConfig,
@@ -13,7 +13,7 @@ import type {
   ModelConfigView,
   WinStatEntry,
   EvolutionTimelineEntry,
-} from '@arlaf/shared'
+} from '@marl/shared'
 
 export type { FieldError as FieldErrorDto }
 

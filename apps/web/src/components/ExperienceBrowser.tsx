@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button, Card, Col, Drawer, Empty, Row, Select, Space, Spin, Statistic, Table, Tag, Timeline, Typography } from 'antd'
 import { useState } from 'react'
-import type { EnvironmentConfig } from '@arlaf/shared'
+import type { EnvironmentConfig } from '@marl/shared'
 import { api, type ExperienceDocDetail } from '../api/client'
 import { KIND_LABELS } from '../i18n'
 

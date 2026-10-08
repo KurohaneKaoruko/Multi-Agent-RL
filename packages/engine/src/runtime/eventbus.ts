@@ -1,4 +1,4 @@
-import type { MatchEvent, MatchEventEnvelope } from '@arlaf/shared'
+import type { MatchEvent, MatchEventEnvelope } from '@marl/shared'
 
 type Listener = (envelope: MatchEventEnvelope) => void
 
