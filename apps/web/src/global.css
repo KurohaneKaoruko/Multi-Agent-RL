@@ -181,3 +181,105 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ===== 经验库 Markdown 阅读 ===== */
+.arlaf-md {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #1f2333;
+  word-break: break-word;
+}
+
+.arlaf-md h1,
+.arlaf-md h2,
+.arlaf-md h3 {
+  color: #312e81;
+  margin: 18px 0 8px;
+  font-weight: 700;
+}
+
+.arlaf-md h1 {
+  font-size: 19px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.arlaf-md h2 {
+  font-size: 17px;
+}
+
+.arlaf-md h3 {
+  font-size: 15px;
+}
+
+.arlaf-md p {
+  margin: 8px 0;
+}
+
+.arlaf-md ul,
+.arlaf-md ol {
+  padding-left: 22px;
+  margin: 8px 0;
+}
+
+.arlaf-md li {
+  margin: 4px 0;
+}
+
+.arlaf-md code {
+  background: #eef0f6;
+  color: #4338ca;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.arlaf-md pre {
+  background: #16143a;
+  color: #e2e8f0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  overflow: auto;
+}
+
+.arlaf-md pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.arlaf-md blockquote {
+  border-left: 3px solid #a5b4fc;
+  background: #f5f6ff;
+  margin: 8px 0;
+  padding: 6px 12px;
+  color: #4b5563;
+  border-radius: 0 8px 8px 0;
+}
+
+.arlaf-md table {
+  border-collapse: collapse;
+  margin: 10px 0;
+  width: 100%;
+}
+
+.arlaf-md th,
+.arlaf-md td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.arlaf-md th {
+  background: #f8f9fd;
+}
+
+.arlaf-md hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 14px 0;
+}
+
+.arlaf-md a {
+  color: #6366f1;
+}
