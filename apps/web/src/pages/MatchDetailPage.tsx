@@ -108,6 +108,25 @@ const JSON_KEY_LABELS: Record<string, string> = {
   confidence: '置信度',
   winner: '胜者',
   score: '评分',
+  is_phishing: '识别结论',
+  detected: '识别结论',
+  red_flags: '识别到的攻击特征',
+  defense_recommendation: '防御建议',
+  analysis: '分析',
+  suggestions: '修改建议',
+  overall: '总体评价',
+}
+
+/** JSON 值渲染：布尔/数组转友好文本 */
+function renderJsonValue(key: string, value: unknown): { tag?: string; text?: string } {
+  if (typeof value === 'boolean') {
+    if (key === 'is_phishing' || key === 'detected') {
+      return { tag: value ? '🚨 识别为攻击' : '⚠️ 未识别出攻击' }
+    }
+    return { text: value ? '是' : '否' }
+  }
+  if (Array.isArray(value)) return { text: value.map((v) => String(v)).join('；') }
+  return { text: String(value) }
 }
 
 /** JSON 行动内容渲染：verdict 类结论转彩色徽标，其余键值对平铺 */
@@ -134,10 +153,18 @@ function JsonActionContent({ text }: { text: string }) {
             </div>
           )
         }
+        const { tag, text: textValue } = renderJsonValue(key, value)
+        if (tag) {
+          return (
+            <div key={key}>
+              <Tag color={tag.startsWith('🚨') ? 'volcano' : 'green'}>{tag}</Tag>
+            </div>
+          )
+        }
         return (
           <div key={key} style={{ fontSize: 13, lineHeight: 1.6 }}>
             <Typography.Text type="secondary">{label}：</Typography.Text>
-            <Typography.Text>{String(value)}</Typography.Text>
+            <Typography.Text>{textValue}</Typography.Text>
           </div>
         )
       })}

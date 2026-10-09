@@ -109,14 +109,15 @@ export const ExperienceConfigSchema = z.object({
 })
 export type ExperienceConfig = z.infer<typeof ExperienceConfigSchema>
 
-/** 项目范式：对抗（Agent-RLAF）或协作（Agent-RLCF）；缺省为对抗 */
-export const ParadigmSchema = z.enum(['adversarial', 'cooperative'])
+/** 项目范式：对抗（Agent-RLAF）、协作（Agent-RLCF）或演练靶场（外部智能体来闯关）；缺省为对抗 */
+export const ParadigmSchema = z.enum(['adversarial', 'cooperative', 'drill'])
 export type Paradigm = z.infer<typeof ParadigmSchema>
 
 /** 对抗环境配置（完整描述一个可开赛的环境） */
-/** 协作环境的结局约束：必须使用 AI 裁判做团队评分 */
+/** 协作环境的结局约束：必须使用 AI 裁判做团队评分；
+ * 演练靶场允许仅 1 名（外部）挑战者智能体，对抗/协作环境至少 2 名。 */
 function paradigmRefine(
-  env: { paradigm?: 'adversarial' | 'cooperative'; outcome: { mode: string } },
+  env: { paradigm?: 'adversarial' | 'cooperative' | 'drill'; outcome: { mode: string }; agents: Array<unknown> },
   ctx: z.RefinementCtx,
 ): void {
   if (env.paradigm === 'cooperative' && env.outcome.mode !== 'judge') {
@@ -124,6 +125,13 @@ function paradigmRefine(
       code: z.ZodIssueCode.custom,
       path: ['outcome'],
       message: '协作环境（Agent-RLCF）的判定方式必须为 AI 裁判（团队评分）',
+    })
+  }
+  if (env.paradigm !== 'drill' && env.agents.length < 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['agents'],
+      message: '对抗/协作环境至少需要 2 名智能体（演练靶场允许仅 1 名外部挑战者）',
     })
   }
 }
@@ -135,7 +143,7 @@ const EnvironmentConfigObject = z.object({
   paradigm: ParadigmSchema.optional(),
   topology: TopologySchema,
   roles: z.array(RoleSchema).min(1),
-  agents: z.array(AgentSlotSchema).min(2),
+  agents: z.array(AgentSlotSchema).min(1),
   turns: TurnStructureSchema,
   workspaceTemplate: WorkspaceTemplateSchema.default({ mode: 'private', files: [] }),
   /** 是否允许智能体在工作区内使用文件工具（读/写/列表），默认开启 */

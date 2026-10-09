@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Link, Outlet, Route, Routes, BrowserRouter } from 'react-router-dom'
 import App from './App'
 import CooperativeEnvironmentsPage from './pages/CooperativeEnvironmentsPage'
+import DrillEnvironmentsPage from './pages/DrillEnvironmentsPage'
 import EnvironmentsPage from './pages/EnvironmentsPage'
 import EnvironmentBuilderPage from './pages/EnvironmentBuilderPage'
 import EnvironmentDetailPage from './pages/EnvironmentDetailPage'
@@ -29,6 +30,7 @@ function Shell() {
     { key: '/', label: <Link to="/">{MENU_LABELS.dashboard}</Link> },
     { key: '/environments', label: <Link to="/environments">{MENU_LABELS.environments}</Link> },
     { key: '/cooperative', label: <Link to="/cooperative">{MENU_LABELS.cooperative}</Link> },
+    { key: '/drills', label: <Link to="/drills">{MENU_LABELS.drills}</Link> },
     { key: '/models', label: <Link to="/models">{MENU_LABELS.models}</Link> },
     { key: '/matches', label: <Link to="/matches">{MENU_LABELS.matches}</Link> },
   ]
@@ -105,6 +107,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <Route path="/environments/new" element={<EnvironmentBuilderPage />} />
                 <Route path="/environments/:id" element={<EnvironmentDetailPage />} />
                 <Route path="/cooperative" element={<CooperativeEnvironmentsPage />} />
+                <Route path="/drills" element={<DrillEnvironmentsPage />} />
                 <Route path="/models" element={<ModelsPage />} />
                 <Route path="/matches" element={<MatchesPage />} />
                 <Route path="/matches/:id" element={<MatchDetailPage />} />

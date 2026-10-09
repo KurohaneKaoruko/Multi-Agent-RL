@@ -47,7 +47,7 @@ export interface TemplateInfo {
   templateId: string
   name: string
   description: string
-  paradigm: 'adversarial' | 'cooperative'
+  paradigm: 'adversarial' | 'cooperative' | 'drill'
 }
 
 export const api = {

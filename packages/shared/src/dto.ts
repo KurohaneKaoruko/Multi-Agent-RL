@@ -82,8 +82,8 @@ export interface EnvironmentView {
   id: string
   name: string
   description: string
-  paradigm: 'adversarial' | 'cooperative'
-  topology: 'symmetric' | 'asymmetric' | 'melee'
+  paradigm: import('./schema').Paradigm
+  topology: import('./schema').Topology
   isBuiltinTemplate: boolean
   createdAt: number
   config: import('./schema').EnvironmentConfig
