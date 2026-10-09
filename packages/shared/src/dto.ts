@@ -9,6 +9,8 @@ export interface MatchSummary {
   environmentName: string
   status: MatchStatus
   winnerAgentId: string | null
+  /** 协作环境（Agent-RLCF）：团队评分（0-100） */
+  teamScore?: number | null
   agentCount: number
   createdAt: number
   finishedAt: number | null

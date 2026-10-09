@@ -7,6 +7,7 @@ import { publish } from '../realtime'
 import {
   getMatchRow,
   insertExperienceRecord,
+  listMatchRowsByBatch,
   settleMatchRow,
   updateMatchStatus,
   updateWinStats,
@@ -18,6 +19,7 @@ import {
  */
 export class MatchManager {
   private readonly settled = new Map<string, Promise<'completed' | 'failed'>>()
+  private readonly batchPromises = new Map<string, Promise<void>>()
 
   constructor(
     private readonly db: Db,
@@ -33,8 +35,44 @@ export class MatchManager {
     return promise
   }
 
+  /** 批量连续训练：同批次对局按创建顺序逐场执行（前一场的经验注入后一场） */
+  startSequenceForBatch(batchId: string): void {
+    if (this.batchPromises.has(batchId)) return
+    const sequence = (async () => {
+      const rows = listMatchRowsByBatch(this.db, batchId).filter((r) => r.status === 'pending')
+      for (const row of rows) {
+        const promise = this.doStart(row.id)
+        this.settled.set(row.id, promise)
+        try {
+          await promise
+        } catch {
+          /* doStart 内部已落库失败状态，继续下一场 */
+        } finally {
+          this.settled.delete(row.id)
+        }
+      }
+    })()
+    this.batchPromises.set(batchId, sequence)
+    void sequence.finally(() => this.batchPromises.delete(batchId))
+  }
+
   whenSettled(matchId: string): Promise<'completed' | 'failed'> | undefined {
-    return this.settled.get(matchId)
+    const direct = this.settled.get(matchId)
+    if (direct) return direct
+    const row = getMatchRow(this.db, matchId)
+    if (!row) return undefined
+    if (row.status === 'completed' || row.status === 'failed') {
+      return Promise.resolve(row.status)
+    }
+    // 批量训练进行中：等待整批执行完毕后按最终状态返回
+    const batch = row.batch_id ? this.batchPromises.get(row.batch_id) : undefined
+    if (batch) {
+      return batch.then(() => {
+        const latest = getMatchRow(this.db, matchId)
+        return latest?.status === 'failed' ? ('failed' as const) : ('completed' as const)
+      })
+    }
+    return undefined
   }
 
   private async doStart(matchId: string): Promise<'completed' | 'failed'> {

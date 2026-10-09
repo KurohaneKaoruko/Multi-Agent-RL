@@ -73,24 +73,25 @@ describe('WebSocket 实时事件流（10.1）', () => {
       const m2 = (
         await app.inject({ method: 'POST', url: '/api/models', payload: mockModel('B', ['B1', 'B2']) })
       ).json() as { id: string }
-      const { id: matchId } = (
-        await app.inject({
-          method: 'POST',
-          url: '/api/matches',
-          payload: {
-            environmentId: 'env-ws',
-            bindings: [
-              { agentId: 'a', modelConfigId: m1.id },
-              { agentId: 'b', modelConfigId: m2.id },
-            ],
-          },
-        })
-      ).json() as { id: string }
+      const createMatchRes = await app.inject({
+        method: 'POST',
+        url: '/api/matches',
+        payload: {
+          environmentId: 'env-ws',
+          bindings: [
+            { agentId: 'a', modelConfigId: m1.id },
+            { agentId: 'b', modelConfigId: m2.id },
+          ],
+        },
+      })
+      expect(createMatchRes.statusCode).toBe(201)
+      const { firstId: matchId } = createMatchRes.json() as { firstId: string }
 
       // 订阅先于开赛：应实时收到全部事件直至 done
       const sub = collectWs(`${base}/api/ws/matches/${matchId}`, (msg) => msg.type === 'done')
       await new Promise((r) => setTimeout(r, 100)) // 等待 WS 握手
-      await app.inject({ method: 'POST', url: `/api/matches/${matchId}/start` })
+      const startRes = await app.inject({ method: 'POST', url: `/api/matches/${matchId}/start` })
+      expect(startRes.statusCode).toBe(202)
 
       const manager = (app as unknown as { arlaf: { manager: { whenSettled: (id: string) => Promise<string> | undefined } } })
         .arlaf.manager

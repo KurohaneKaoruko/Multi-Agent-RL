@@ -19,7 +19,15 @@ async function setup(): Promise<void> {
 
 async function teardown(): Promise<void> {
   await closeApp(app)
-  await rm(dataDir, { recursive: true, force: true })
+  // rm 偶发与异步写盘竞态（引擎回写工作区），重试以确保清理
+  for (let i = 0; i < 3; i++) {
+    try {
+      await rm(dataDir, { recursive: true, force: true })
+      return
+    } catch {
+      await new Promise((r) => setTimeout(r, 150))
+    }
+  }
 }
 
 function mockModelConfig(name: string, script: unknown[]) {
@@ -151,7 +159,8 @@ describe('ARLAF API 集成（9.1–9.5）', () => {
         },
       })
       expect(createMatchRes.statusCode).toBe(201)
-      const { id: matchId } = createMatchRes.json() as { id: string }
+      const createBody = createMatchRes.json() as { ids: string[]; firstId: string }
+      const matchId = createBody.firstId
 
       const startRes = await app.inject({ method: 'POST', url: `/api/matches/${matchId}/start` })
       expect(startRes.statusCode).toBe(202)
@@ -209,6 +218,102 @@ describe('ARLAF API 集成（9.1–9.5）', () => {
       expect((await app.inject({ method: 'GET', url: '/api/environments/env-app' })).statusCode).toBe(404)
     } finally {
       await teardown()
+      // rm 偶发与异步写盘竞态，重试以确保清理
+      for (let i = 0; i < 3; i++) {
+        try {
+          await rm(dataDir, { recursive: true, force: true })
+          break
+        } catch {
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }
+    }
+  }, 30000)
+
+  it('批量连续训练与环境导入导出', async () => {
+    await setup()
+    try {
+      // 准备：mock 模型 + 从内置模板创建环境
+      const modelARes = await app.inject({
+        method: 'POST',
+        url: '/api/models',
+        payload: mockModelConfig('写手', ['A1', summaryOf('A')]),
+      })
+      const modelA = modelARes.json() as { id: string }
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/environments/from-template',
+        payload: { templateId: 'ai-flavor-adversarial' },
+      })
+      const env = created.json() as { id: string }
+
+      // ---- episodes=2：一次创建两场同批次对局，顺序执行、经验逐场累积 ----
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/matches',
+        payload: {
+          environmentId: env.id,
+          bindings: [
+            { agentId: 'writer-a', modelConfigId: modelA.id },
+            { agentId: 'detector-a', modelConfigId: modelA.id },
+          ],
+          episodes: 2,
+        },
+      })
+      expect(createRes.statusCode).toBe(201)
+      const { ids, firstId } = createRes.json() as { ids: string[]; firstId: string }
+      expect(ids).toHaveLength(2)
+
+      const startRes = await app.inject({ method: 'POST', url: `/api/matches/${firstId}/start` })
+      expect(startRes.statusCode).toBe(202)
+      const manager = (
+        app as unknown as { arlaf: { manager: { whenSettled: (id: string) => Promise<string> | undefined } } }
+      ).arlaf.manager
+      for (const mid of ids) {
+        expect(await manager.whenSettled(mid)).toBe('completed')
+      }
+      // 第二场注入第一场经验（连续训练的经验闭环）
+      const events2 = (
+        await app.inject({ method: 'GET', url: `/api/matches/${ids[1]!}/events` })
+      ).json() as { events: Array<{ event: { type: string } }> }
+      expect(events2.events.some((e) => e.event.type === 'injection.recorded')).toBe(true)
+
+      // ---- 环境导出/导入 ----
+      const exportRes = await app.inject({ method: 'GET', url: `/api/environments/${env.id}/export` })
+      expect(exportRes.statusCode).toBe(200)
+      expect(exportRes.headers['content-type']).toContain('application/json')
+      const exported = exportRes.json() as { kind: string; config: { name: string } }
+      expect(exported.kind).toBe('marl-environment')
+
+      const importRes = await app.inject({
+        method: 'POST',
+        url: '/api/environments/import',
+        payload: { config: exported.config },
+      })
+      expect(importRes.statusCode).toBe(201)
+      const importedEnv = importRes.json() as { id: string; name: string }
+      expect(importedEnv.id).not.toBe(env.id)
+      expect(importedEnv.name).toBe('AI 味对抗（写作者 vs 辨别者）')
+
+      // 坏配置导入 → 400 字段级错误
+      const badImport = await app.inject({
+        method: 'POST',
+        url: '/api/environments/import',
+        payload: { config: { name: '缺角色' } },
+      })
+      expect(badImport.statusCode).toBe(400)
+      expect((badImport.json() as { fields: unknown[] }).fields.length).toBeGreaterThan(0)
+    } finally {
+      await teardown()
+      // rm 偶发与异步写盘竞态，重试以确保清理
+      for (let i = 0; i < 3; i++) {
+        try {
+          await rm(dataDir, { recursive: true, force: true })
+          break
+        } catch {
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }
     }
   }, 30000)
 
@@ -291,6 +396,15 @@ describe('ARLAF API 集成（9.1–9.5）', () => {
       expect(noModel.statusCode).toBe(400)
     } finally {
       await teardown()
+      // rm 偶发与异步写盘竞态，重试以确保清理
+      for (let i = 0; i < 3; i++) {
+        try {
+          await rm(dataDir, { recursive: true, force: true })
+          break
+        } catch {
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }
     }
   }, 20000)
 })

@@ -158,6 +158,7 @@ export interface MatchRow {
   status: MatchStatus
   bindings_json: string
   agent_ids: string
+  batch_id: string | null
   winner_agent_id: string | null
   result_json: string | null
   error: string | null
@@ -165,9 +166,12 @@ export interface MatchRow {
   finished_at: number | null
 }
 
-export function insertMatchRow(db: Db, input: { id: string; env: EnvironmentView; bindings: AgentBinding[] }): void {
+export function insertMatchRow(
+  db: Db,
+  input: { id: string; env: EnvironmentView; bindings: AgentBinding[]; batchId?: string },
+): void {
   db.prepare(
-    'INSERT INTO matches (id, environment_id, environment_name, status, bindings_json, agent_ids, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO matches (id, environment_id, environment_name, status, bindings_json, agent_ids, batch_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     input.id,
     input.env.id,
@@ -175,7 +179,16 @@ export function insertMatchRow(db: Db, input: { id: string; env: EnvironmentView
     'pending',
     JSON.stringify(input.bindings),
     JSON.stringify(input.env.config.agents.map((a) => a.id)),
+    input.batchId ?? null,
     Date.now(),
+  )
+}
+
+export function listMatchRowsByBatch(db: Db, batchId: string): MatchRow[] {
+  return (
+    db
+      .prepare('SELECT * FROM matches WHERE batch_id = ? ORDER BY created_at ASC')
+      .all(batchId) as MatchRow[]
   )
 }
 
@@ -212,12 +225,22 @@ export function settleMatchRow(
 }
 
 export function matchRowToSummary(row: MatchRow): MatchSummary {
+  let teamScore: number | null = null
+  if (row.result_json) {
+    try {
+      const result = JSON.parse(row.result_json) as { verdict?: { teamScore?: number } }
+      teamScore = result.verdict?.teamScore ?? null
+    } catch {
+      teamScore = null
+    }
+  }
   return {
     id: row.id,
     environmentId: row.environment_id,
     environmentName: row.environment_name,
     status: row.status,
     winnerAgentId: row.winner_agent_id,
+    teamScore,
     agentCount: (JSON.parse(row.agent_ids) as string[]).length,
     createdAt: row.created_at,
     finishedAt: row.finished_at,
