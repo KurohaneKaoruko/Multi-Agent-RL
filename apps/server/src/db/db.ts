@@ -88,6 +88,14 @@ export function migrate(db: Db): void {
     db.exec(MIGRATION_V1)
     db.pragma('user_version = 1')
   }
+  if (version < 2) {
+    // 批量连续训练：同批次对局共享 batch_id，按顺序执行
+    db.exec(
+      'ALTER TABLE matches ADD COLUMN batch_id TEXT;\n' +
+        'CREATE INDEX IF NOT EXISTS idx_matches_batch ON matches (batch_id);',
+    )
+    db.pragma('user_version = 2')
+  }
 }
 
 export function closeDb(db: Db): void {

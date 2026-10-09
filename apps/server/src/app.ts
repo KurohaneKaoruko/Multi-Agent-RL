@@ -54,6 +54,8 @@ const MatchCreateSchema = z.object({
       }),
     )
     .min(1),
+  /** 批量连续训练：一次创建并按顺序执行 N 场（前一场经验注入后一场） */
+  episodes: z.number().int().min(1).max(20).default(1),
 })
 
 const ValidateBodySchema = z.object({
@@ -188,6 +190,40 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       const refErrors = validateEnvironmentRefs(parsed.data)
       if (refErrors.length > 0) return reply.code(400).send({ error: '环境配置存在引用错误', fields: refErrors })
       const view = repos.insertEnvironment(db, parsed.data)
+      return reply.code(201).send(view)
+    },
+  )
+
+  // 环境配置导出（JSON 文件下载，可分享/导入）
+  app.get('/api/environments/:id/export', async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const view = repos.getEnvironment(db, id)
+    if (!view) return notFound(reply, '环境')
+    const payload = {
+      kind: 'marl-environment',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      config: view.config,
+    }
+    reply
+      .header('content-type', 'application/json; charset=utf-8')
+      .header('content-disposition', `attachment; filename="env-${view.id}.json"`)
+    return reply.send(JSON.stringify(payload, null, 2))
+  })
+
+  // 环境配置导入：分配新 id，避免与既有环境冲突
+  app.post(
+    '/api/environments/import',
+    { schema: { body: { type: 'object' } } },
+    async (request, reply) => {
+      const body = request.body as { config?: unknown }
+      const configBody = body?.config ?? body
+      const parsed = parseBody(EnvironmentConfigSchema, configBody)
+      if (!parsed.ok) return reply.code(400).send({ error: '环境配置校验失败', fields: parsed.fields })
+      const config: EnvironmentConfig = { ...parsed.data, id: newId('env') }
+      const refErrors = validateEnvironmentRefs(config)
+      if (refErrors.length > 0) return reply.code(400).send({ error: '环境配置存在引用错误', fields: refErrors })
+      const view = repos.insertEnvironment(db, config, false)
       return reply.code(201).send(view)
     },
   )
@@ -373,9 +409,16 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       const resolved = resolveBindings(db, parsed.data.bindings)
       const errors = validateBindingsForMatch(view.config, resolved)
       if (errors.length > 0) return reply.code(400).send({ error: '无法开赛：对局前校验未通过', fields: errors })
-      const id = newId('match')
-      repos.insertMatchRow(db, { id, env: view, bindings: resolved })
-      return reply.code(201).send({ id, status: 'pending' })
+
+      // 批量连续训练：一次创建 N 场同批次对局（顺序执行，前一场经验注入后一场）
+      const batchId = parsed.data.episodes > 1 ? newId('batch') : null
+      const ids: string[] = []
+      for (let i = 0; i < parsed.data.episodes; i++) {
+        const id = newId('match')
+        repos.insertMatchRow(db, { id, env: view, bindings: resolved, batchId: batchId ?? undefined })
+        ids.push(id)
+      }
+      return reply.code(201).send({ ids, firstId: ids[0]!, status: 'pending', episodes: parsed.data.episodes })
     },
   )
 
@@ -386,6 +429,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (row.status === 'running') return reply.code(202).send({ id, status: 'running' })
     if (row.status !== 'pending') {
       return reply.code(409).send({ error: `对局已结束（${row.status}），无法重复启动` })
+    }
+    // 批量连续训练：同批次后续对局由引擎按顺序接续执行
+    if (row.batch_id) {
+      manager.startSequenceForBatch(row.batch_id)
+      return reply.code(202).send({ id, status: 'running', batchId: row.batch_id })
     }
     void manager.start(id)
     return reply.code(202).send({ id, status: 'running' })

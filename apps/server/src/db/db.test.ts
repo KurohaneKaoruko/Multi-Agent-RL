@@ -36,7 +36,7 @@ describe('迁移（8.1）', () => {
         'win_stats',
       ])
       expect(() => migrate(db)).not.toThrow() // 幂等
-      expect(db.pragma('user_version', { simple: true })).toBe(1)
+      expect(db.pragma('user_version', { simple: true })).toBe(2)
     })
   })
 
