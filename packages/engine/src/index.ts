@@ -27,7 +27,10 @@ export {
 } from './runtime/agent'
 export {
   aiFlavorEvaluator,
+  attackDefenseEvaluator,
   builtinRuleEvaluators,
+  flagCheckEvaluator,
+  parseAttackDetection,
   parseDetectorVerdict,
   type RuleEvaluator,
   type RuleOutcome,

@@ -4,6 +4,7 @@ export const MENU_LABELS = {
   dashboard: '首页',
   environments: '对抗环境',
   cooperative: '协作环境',
+  drills: '演练环境',
   models: '模型设置',
   matches: '对局记录',
 } as const
@@ -11,6 +12,7 @@ export const MENU_LABELS = {
 export const PARADIGM_LABELS: Record<string, string> = {
   adversarial: '对抗 · Agent-RLAF',
   cooperative: '协作 · Agent-RLCF',
+  drill: '演练 · 靶场',
 }
 
 export const COMMON_MESSAGES = {

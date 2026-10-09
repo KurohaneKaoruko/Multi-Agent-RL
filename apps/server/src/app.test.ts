@@ -92,8 +92,8 @@ describe('ARLAF API 集成（9.1–9.5）', () => {
       const createRes = await app.inject({ method: 'POST', url: '/api/environments', payload: envFixture() })
       expect(createRes.statusCode).toBe(201)
       const listRes = await app.inject({ method: 'GET', url: '/api/environments' })
-      // 内置模板（冷启动种子：对抗 + 协作）+ 新建环境
-      expect((listRes.json() as { environments: unknown[] }).environments).toHaveLength(3)
+      // 内置模板（冷启动种子：对抗 ×2 + 协作 + 演练 ×2）+ 新建环境
+      expect((listRes.json() as { environments: unknown[] }).environments).toHaveLength(6)
 
       // 对局前校验：缺绑定报具体 Agent；规则环境绑裁判报错
       const validateRes = await app.inject({
