@@ -2,6 +2,7 @@
 import {
   ThunderboltFilled,
   ApartmentOutlined,
+  AimOutlined,
   ApiOutlined,
   TrophyOutlined,
   TeamOutlined,
@@ -46,7 +47,8 @@ export default function App() {
   const matchQuery = useQuery({ queryKey: ['matches'], queryFn: api.matches.list })
 
   const envs = envQuery.data?.environments ?? []
-  const adversarialCount = envs.filter((e) => e.paradigm !== 'cooperative').length
+  const adversarialCount = envs.filter((e) => e.paradigm === 'adversarial').length
+  const drillCount = envs.filter((e) => e.paradigm === 'drill').length
   const cooperativeCount = envs.filter((e) => e.paradigm === 'cooperative').length
   const modelCount = modelQuery.data?.models.length ?? 0
   const matches = matchQuery.data?.matches ?? []
@@ -57,8 +59,9 @@ export default function App() {
       <div className="arlaf-hero">
         <h1 className="arlaf-hero-title">让智能体在反馈中进化</h1>
         <p className="arlaf-hero-desc">
-          Multi-Agent-RL 支持两大范式：<b>Agent-RLAF</b>（对抗反馈）——智能体在互斥胜负的仿真环境中对抗切磋；
-          <b>Agent-RLCF</b>（协作反馈）——多个智能体围绕共同目标分工协作，由 AI 裁判为团队评分、复盘短板。
+          Multi-Agent-RL 支持三大范式：<b>Agent-RLAF</b>（对抗反馈）——智能体在互斥胜负的仿真环境中对抗切磋；
+          <b>Agent-RLCF</b>（协作反馈）——多个智能体围绕共同目标分工协作，由 AI 裁判为团队评分、复盘短板；
+          <b>靶场演练</b>——网络攻防、应急响应等实训场景，以靶标达成判定成效。
           从「生成-辨别」文本对抗到「作者 × 编辑结对写作工坊」，一个框架全部承载。
         </p>
         <Space size="middle">
@@ -115,6 +118,17 @@ export default function App() {
               title="协作环境 · Agent-RLCF"
               value={cooperativeCount}
               description="团队评分，协作共赢"
+            />
+          </Link>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Link to="/drills" style={{ display: 'block' }}>
+            <StatCard
+              icon={<AimOutlined />}
+              color="#f43f5e"
+              title="演练环境 · 靶场"
+              value={drillCount}
+              description="攻防演练，靶场实训"
             />
           </Link>
         </Col>

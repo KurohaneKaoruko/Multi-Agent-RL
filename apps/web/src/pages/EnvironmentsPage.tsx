@@ -17,8 +17,8 @@ export default function EnvironmentsPage() {
 
   const envQuery = useQuery({ queryKey: ['environments'], queryFn: api.environments.list })
   const templatesQuery = useQuery({ queryKey: ['templates'], queryFn: api.environments.templates })
-  const environments = (envQuery.data?.environments ?? []).filter((e) => e.paradigm !== 'cooperative')
-  const templates = (templatesQuery.data?.templates ?? []).filter((t) => t.paradigm !== 'cooperative')
+  const environments = (envQuery.data?.environments ?? []).filter((e) => e.paradigm === 'adversarial')
+  const templates = (templatesQuery.data?.templates ?? []).filter((t) => t.paradigm === 'adversarial')
 
   const invalidate = (): void => void queryClient.invalidateQueries({ queryKey: ['environments'] })
   const showApiError = (err: unknown): void => {
