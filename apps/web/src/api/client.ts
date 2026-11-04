@@ -74,8 +74,12 @@ export const api = {
   },
   matches: {
     list: () => http<{ matches: MatchSummary[] }>('/matches'),
+    /** 创建对局（episodes>1 时为批量连续训练）：返回同批次全部 id，firstId 为首场 */
     create: (input: { environmentId: string; bindings: Array<{ agentId: string; modelConfigId: string }> }) =>
-      http<{ id: string; status: string }>('/matches', { method: 'POST', body: input }),
+      http<{ ids: string[]; firstId: string; status: string; episodes: number }>('/matches', {
+        method: 'POST',
+        body: input,
+      }),
     start: (id: string) => http<{ id: string; status: string }>(`/matches/${id}/start`, { method: 'POST' }),
     get: (id: string) => http<MatchDetail>(`/matches/${id}`),
     events: (id: string, since = 0) => http<MatchEventsResponse>(`/matches/${id}/events?since=${since}`),

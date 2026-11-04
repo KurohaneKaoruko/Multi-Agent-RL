@@ -66,8 +66,8 @@ export default function LaunchMatchModal({
         environmentId: envId,
         bindings: [...bindings, ...judgeBinding.filter((b) => b.modelConfigId)],
       })
-      await api.matches.start(created.id)
-      return created.id
+      await api.matches.start(created.firstId)
+      return created.firstId
     },
     onSuccess: (matchId) => {
       message.success('对局已启动')
