@@ -31,7 +31,12 @@ export function subscribeMatchEvents(
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
     ws = new WebSocket(`${proto}://${window.location.host}/api/ws/matches/${matchId}?since=${lastSeq}`)
     ws.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data as string) as WsMessage
+      let msg: WsMessage
+      try {
+        msg = JSON.parse(ev.data as string) as WsMessage
+      } catch {
+        return // 代理/服务端异常时可能回非 JSON（如 HTML 错误页），忽略等待重连
+      }
       if (msg.type === 'error') {
         handlers.onError?.(msg.message ?? '订阅失败')
         finished = true
@@ -50,6 +55,7 @@ export function subscribeMatchEvents(
       }
     }
     ws.onclose = () => {
+      ws = null // 释放引用；finished/closedByUs 为真时不再重连
       if (!closedByUs && !finished) {
         setTimeout(connect, 1000) // 断线重连，按 lastSeq 补齐缺口
       }

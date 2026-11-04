@@ -17,15 +17,27 @@ export function registerMatchWs(app: FastifyInstance, db: Db): void {
     const query = request.query as { since?: string }
     const since = Math.max(0, Number(query.since ?? 0) || 0)
 
+    // 安全发送：socket 已关闭/正在关闭时跳过（ws 库对非 OPEN 状态 send 会抛异常，
+    // 从心跳定时器回调抛出会成为 uncaughtException 击穿进程）
+    const safeSend = (payload: string): boolean => {
+      if (socket.readyState !== socket.OPEN) return false
+      try {
+        socket.send(payload)
+        return true
+      } catch {
+        return false
+      }
+    }
+
     if (!getMatchRow(db, id)) {
-      socket.send(JSON.stringify({ type: 'error', message: `对局不存在：${id}` }))
+      safeSend(JSON.stringify({ type: 'error', message: `对局不存在：${id}` }))
       socket.close()
       return
     }
 
     const sendSince = (from: number): number => {
       const backlog = listEvents(db, id, from)
-      for (const envelope of backlog) socket.send(JSON.stringify(envelope))
+      for (const envelope of backlog) safeSend(JSON.stringify(envelope))
       return backlog.length > 0 ? backlog[backlog.length - 1]!.seq : from
     }
 
@@ -35,12 +47,12 @@ export function registerMatchWs(app: FastifyInstance, db: Db): void {
     const unsubscribe = subscribe(id, (envelope) => {
       if (envelope.seq <= lastSeq) return
       lastSeq = envelope.seq
-      socket.send(JSON.stringify(envelope))
+      safeSend(JSON.stringify(envelope))
     })
 
     // 对局已终结（事件流不再增长）→ 发送 done 并关闭
     const finish = (): void => {
-      socket.send(JSON.stringify({ type: 'done', latestSeq: latestSeq(db, id) }))
+      safeSend(JSON.stringify({ type: 'done', latestSeq: latestSeq(db, id) }))
       socket.close()
     }
     const row = getMatchRow(db, id)!

@@ -140,4 +140,67 @@ describe('WebSocket 实时事件流（10.1）', () => {
       await rm(dataDir, { recursive: true, force: true })
     }
   }, 15000)
+
+  it('客户端提前断开后对局结算：finish() 对已关闭 socket 安全，不击穿进程', async () => {
+    const dataDir = await mkdtemp(path.join(tmpdir(), 'arlaf-ws3-'))
+    const app: FastifyInstance = await buildApp({ dataDir })
+    // 兜底哨兵：任何 uncaughtException（如对 readyState=3 的 socket send 抛错）都视为失败
+    const uncaught: Array<unknown> = []
+    const onUncaught = (err: unknown): void => {
+      uncaught.push(err)
+    }
+    process.on('uncaughtException', onUncaught)
+    try {
+      await app.listen({ port: 0, host: '127.0.0.1' })
+      const addr = app.server.address() as AddressInfo
+      const base = `ws://127.0.0.1:${addr.port}`
+
+      await app.inject({ method: 'POST', url: '/api/environments', payload: envFixture() })
+      const m1 = (
+        await app.inject({ method: 'POST', url: '/api/models', payload: mockModel('A', ['A1', 'A2']) })
+      ).json() as { id: string }
+      const m2 = (
+        await app.inject({ method: 'POST', url: '/api/models', payload: mockModel('B', ['B1', 'B2']) })
+      ).json() as { id: string }
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/matches',
+        payload: {
+          environmentId: 'env-ws',
+          bindings: [
+            { agentId: 'a', modelConfigId: m1.id },
+            { agentId: 'b', modelConfigId: m2.id },
+          ],
+        },
+      })
+      const { firstId: matchId } = created.json() as { firstId: string }
+
+      // 订阅后立即断开（心跳仍存活，等待对局结算时 finish() 会命中已关闭 socket）
+      const ws = new WebSocket(`${base}/api/ws/matches/${matchId}`)
+      await new Promise<void>((resolve, reject) => {
+        ws.on('open', () => resolve())
+        ws.on('error', reject)
+      })
+      ws.close()
+      await new Promise((r) => setTimeout(r, 100))
+
+      // 开赛并等待结算：300ms 心跳轮询期间触发 finish()
+      const startRes = await app.inject({ method: 'POST', url: `/api/matches/${matchId}/start` })
+      expect(startRes.statusCode).toBe(202)
+      const manager = (
+        app as unknown as { arlaf: { manager: { whenSettled: (id: string) => Promise<string> | undefined } } }
+      ).arlaf.manager
+      expect(await manager.whenSettled(matchId)).toBe('completed')
+
+      // 覆盖至少一个心跳周期，确认无异常抛出、服务进程仍健康
+      await new Promise((r) => setTimeout(r, 500))
+      expect(uncaught).toEqual([])
+      const health = await app.inject({ method: 'GET', url: `/api/matches/${matchId}` })
+      expect(health.statusCode).toBe(200)
+    } finally {
+      process.off('uncaughtException', onUncaught)
+      await closeApp(app)
+      await rm(dataDir, { recursive: true, force: true })
+    }
+  }, 20000)
 })
