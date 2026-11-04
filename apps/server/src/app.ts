@@ -395,7 +395,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   /* ---------------- matches ---------------- */
 
   app.get('/api/matches', async () => {
-    const matches: MatchSummary[] = repos.listMatchRows(db).map(repos.matchRowToSummary)
+    const matches: MatchSummary[] = repos.listMatchRows(db).map((row) => repos.matchRowToSummary(db, row))
     return { matches } satisfies { matches: MatchSummary[] }
   })
 
@@ -455,7 +455,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     const { id } = request.params as { id: string }
     const row = repos.getMatchRow(db, id)
     if (!row) return notFound(reply, '对局')
-    const summary = repos.matchRowToSummary(row)
+    const summary = repos.matchRowToSummary(db, row)
     let result: MatchDetail['result'] = null
     if (row.result_json) {
       const parsedResult = MatchResultSchema.safeParse(JSON.parse(row.result_json))

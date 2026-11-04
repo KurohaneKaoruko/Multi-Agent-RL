@@ -70,6 +70,9 @@ const MATCH_SUMMARY_KEYS = [
   'agentCount',
   'createdAt',
   'finishedAt',
+  'batchId',
+  'batchIndex',
+  'batchSize',
 ] as const
 
 const MATCH_DETAIL_KEYS = [...MATCH_SUMMARY_KEYS, 'agentIds', 'error', 'result'] as const
@@ -164,6 +167,47 @@ describe('API 契约（服务端响应 ↔ @marl/shared DTO ↔ web client 类�
       expect(body.ids).toHaveLength(20)
       expect(body.firstId).toBe(body.ids[0])
       expect(MatchCreateResponseSchema.parse(body).episodes).toBe(20)
+
+      // 批次字段契约：批量对局的摘要携带 batchId/batchIndex/batchSize
+      const listRes = await app.inject({ method: 'GET', url: '/api/matches' })
+      const summaries = (listRes.json() as { matches: MatchSummary[] }).matches.filter(
+        (m) => body.ids.includes(m.id),
+      )
+      expect(summaries).toHaveLength(20)
+      for (const summary of summaries) {
+        expect(summary.batchId).toBeTruthy()
+        expect(summary.batchSize).toBe(20)
+        expect(summary.batchIndex).toBeGreaterThanOrEqual(1)
+        expect(summary.batchIndex).toBeLessThanOrEqual(20)
+        expect(MatchSummarySchema.parse(summary)).toBeDefined()
+      }
+      // 同批次 batchId 一致、batchIndex 覆盖 1..20 不重复
+      expect(new Set(summaries.map((m) => m.batchId)).size).toBe(1)
+      expect(new Set(summaries.map((m) => m.batchIndex)).size).toBe(20)
+
+      // 单场对局（episodes=1）：批次字段为 null
+      const single = await app.inject({
+        method: 'POST',
+        url: '/api/matches',
+        payload: {
+          environmentId: envId,
+          bindings: [
+            { agentId: 'a', modelConfigId: modelId },
+            { agentId: 'b', modelConfigId: modelId },
+          ],
+        },
+      })
+      const singleId = (single.json() as MatchCreateResponse).firstId
+      const singleSummary = (listRes.json() as { matches: MatchSummary[] }).matches
+      const fresh = (
+        await app.inject({ method: 'GET', url: '/api/matches' })
+      ).json() as { matches: MatchSummary[] }
+      const singleRow = fresh.matches.find((m) => m.id === singleId)!
+      expect(singleRow.batchId).toBeNull()
+      expect(singleRow.batchIndex).toBeNull()
+      expect(singleRow.batchSize).toBeNull()
+      expect(MatchSummarySchema.parse(singleRow)).toBeDefined()
+      expect(singleSummary.length).toBeGreaterThan(0) // listRes 复用断言
 
       for (const episodes of [0, 21, 1.5]) {
         const bad = await app.inject({

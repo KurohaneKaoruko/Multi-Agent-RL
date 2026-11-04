@@ -224,7 +224,7 @@ export function settleMatchRow(
   }
 }
 
-export function matchRowToSummary(row: MatchRow): MatchSummary {
+export function matchRowToSummary(db: Db, row: MatchRow): MatchSummary {
   let teamScore: number | null = null
   if (row.result_json) {
     try {
@@ -233,6 +233,13 @@ export function matchRowToSummary(row: MatchRow): MatchSummary {
     } catch {
       teamScore = null
     }
+  }
+  let batchIndex: number | null = null
+  let batchSize: number | null = null
+  if (row.batch_id) {
+    const siblings = listMatchRowsByBatch(db, row.batch_id)
+    batchSize = siblings.length
+    batchIndex = siblings.findIndex((r) => r.id === row.id) + 1
   }
   return {
     id: row.id,
@@ -244,6 +251,9 @@ export function matchRowToSummary(row: MatchRow): MatchSummary {
     agentCount: (JSON.parse(row.agent_ids) as string[]).length,
     createdAt: row.created_at,
     finishedAt: row.finished_at,
+    batchId: row.batch_id,
+    batchIndex,
+    batchSize,
   }
 }
 

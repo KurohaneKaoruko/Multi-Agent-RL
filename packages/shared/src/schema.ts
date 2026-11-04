@@ -190,6 +190,9 @@ export const MatchSummarySchema = z.object({
   agentCount: z.number().int().min(1),
   createdAt: z.number(),
   finishedAt: z.number().nullable(),
+  batchId: z.string().min(1).nullable().optional(),
+  batchIndex: z.number().int().min(1).nullable().optional(),
+  batchSize: z.number().int().min(1).nullable().optional(),
 })
 
 export const MatchDetailSchema = MatchSummarySchema.extend({

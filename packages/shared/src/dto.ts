@@ -14,6 +14,12 @@ export interface MatchSummary {
   agentCount: number
   createdAt: number
   finishedAt: number | null
+  /** 批量连续训练：所属批次 id（单场对局为 null） */
+  batchId?: string | null
+  /** 批量连续训练：本场在批次中的序号（从 1 开始；单场对局为 null） */
+  batchIndex?: number | null
+  /** 批量连续训练：批次总场数（单场对局为 null） */
+  batchSize?: number | null
 }
 
 /** 对局详情（含结果与诊断） */
