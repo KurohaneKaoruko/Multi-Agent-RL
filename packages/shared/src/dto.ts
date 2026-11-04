@@ -29,6 +29,22 @@ export interface MatchEventsResponse {
   latestSeq: number
 }
 
+/** 创建对局响应（episodes>1 时为批量连续训练）：ids 为同批次全部对局，firstId 为首场 */
+export interface MatchCreateResponse {
+  ids: string[]
+  firstId: string
+  status: MatchStatus
+  /** 实际创建场数（1-20；episodes=1 时 ids 长度也为 1） */
+  episodes: number
+}
+
+/** 启动对局响应（202）；批量批次启动时额外携带 batchId */
+export interface MatchStartResponse {
+  id: string
+  status: Extract<MatchStatus, 'running'>
+  batchId?: string
+}
+
 /** 经验文档详情（含内容） */
 export interface ExperienceDocDetail {
   meta: ExperienceDocMeta

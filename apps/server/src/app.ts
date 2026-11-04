@@ -22,6 +22,11 @@ import {
   type AgentBinding,
   type EnvironmentConfig,
   type FieldError,
+  type MatchCreateResponse,
+  type MatchDetail,
+  type MatchEventsResponse,
+  type MatchStartResponse,
+  type MatchSummary,
 } from '@marl/shared'
 import { closeDb, openDb, type Db } from './db/db'
 import { latestSeq, listEvents } from './db/events'
@@ -389,7 +394,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   /* ---------------- matches ---------------- */
 
-  app.get('/api/matches', async () => ({ matches: repos.listMatchRows(db).map(repos.matchRowToSummary) }))
+  app.get('/api/matches', async () => {
+    const matches: MatchSummary[] = repos.listMatchRows(db).map(repos.matchRowToSummary)
+    return { matches } satisfies { matches: MatchSummary[] }
+  })
 
   app.post(
     '/api/matches',
@@ -418,7 +426,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         repos.insertMatchRow(db, { id, env: view, bindings: resolved, batchId: batchId ?? undefined })
         ids.push(id)
       }
-      return reply.code(201).send({ ids, firstId: ids[0]!, status: 'pending', episodes: parsed.data.episodes })
+      // 编译期契约：响应 shape 漂移（如改字段名）将在此处 typecheck 失败
+      const body: MatchCreateResponse = { ids, firstId: ids[0]!, status: 'pending', episodes: parsed.data.episodes }
+      return reply.code(201).send(body satisfies MatchCreateResponse)
     },
   )
 
@@ -433,10 +443,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // 批量连续训练：同批次后续对局由引擎按顺序接续执行
     if (row.batch_id) {
       manager.startSequenceForBatch(row.batch_id)
-      return reply.code(202).send({ id, status: 'running', batchId: row.batch_id })
+      const body: MatchStartResponse = { id, status: 'running', batchId: row.batch_id }
+      return reply.code(202).send(body satisfies MatchStartResponse)
     }
     void manager.start(id)
-    return reply.code(202).send({ id, status: 'running' })
+    const body: MatchStartResponse = { id, status: 'running' }
+    return reply.code(202).send(body satisfies MatchStartResponse)
   })
 
   app.get('/api/matches/:id', async (request, reply) => {
@@ -444,12 +456,19 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     const row = repos.getMatchRow(db, id)
     if (!row) return notFound(reply, '对局')
     const summary = repos.matchRowToSummary(row)
-    let result: unknown = null
+    let result: MatchDetail['result'] = null
     if (row.result_json) {
       const parsedResult = MatchResultSchema.safeParse(JSON.parse(row.result_json))
       if (parsedResult.success) result = parsedResult.data
     }
-    return { ...summary, agentIds: JSON.parse(row.agent_ids) as string[], error: row.error, result }
+    // 编译期契约：MatchDetail 漂移（新增/改名/删除字段）将在此处 typecheck 失败
+    const body: MatchDetail = {
+      ...summary,
+      agentIds: JSON.parse(row.agent_ids) as string[],
+      error: row.error,
+      result,
+    }
+    return body satisfies MatchDetail
   })
 
   app.get('/api/matches/:id/events', async (request, reply) => {
@@ -457,7 +476,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (!repos.getMatchRow(db, id)) return notFound(reply, '对局')
     const query = request.query as { since?: string }
     const since = Math.max(0, Number(query.since ?? 0) || 0)
-    return { events: listEvents(db, id, since), latestSeq: latestSeq(db, id) }
+    const body: MatchEventsResponse = { events: listEvents(db, id, since), latestSeq: latestSeq(db, id) }
+    return body satisfies MatchEventsResponse
   })
 
   /* ---------------- stats ---------------- */

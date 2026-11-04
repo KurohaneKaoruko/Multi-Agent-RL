@@ -175,3 +175,43 @@ export const MatchOptionsSchema = z.object({
   concurrency: z.number().int().min(1).max(16).default(4),
 })
 export type MatchOptions = z.infer<typeof MatchOptionsSchema>
+
+/* ---------------- REST 响应契约 schema（与 dto.ts 一一对应，供契约测试与校验复用） ---------------- */
+
+export const MatchStatusSchema = z.enum(['pending', 'running', 'completed', 'failed'])
+
+export const MatchSummarySchema = z.object({
+  id: z.string().min(1),
+  environmentId: z.string().min(1),
+  environmentName: z.string().min(1),
+  status: MatchStatusSchema,
+  winnerAgentId: z.string().min(1).nullable(),
+  teamScore: z.number().min(0).max(100).nullable().optional(),
+  agentCount: z.number().int().min(1),
+  createdAt: z.number(),
+  finishedAt: z.number().nullable(),
+})
+
+export const MatchDetailSchema = MatchSummarySchema.extend({
+  agentIds: z.array(z.string().min(1)),
+  error: z.string().nullable(),
+  result: z.unknown().nullable(),
+})
+
+export const MatchCreateResponseSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(20),
+  firstId: z.string().min(1),
+  status: MatchStatusSchema,
+  episodes: z.number().int().min(1).max(20),
+})
+
+export const MatchStartResponseSchema = z.object({
+  id: z.string().min(1),
+  status: z.literal('running'),
+  batchId: z.string().min(1).optional(),
+})
+
+export const MatchEventsResponseSchema = z.object({
+  events: z.array(z.custom<import('./events').MatchEventEnvelope>((v) => typeof v === 'object' && v !== null)),
+  latestSeq: z.number().int().min(0),
+})

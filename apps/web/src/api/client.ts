@@ -6,8 +6,10 @@ import type {
   ExperienceDocDetail,
   ExperienceDocMeta,
   FieldError,
+  MatchCreateResponse,
   MatchDetail,
   MatchEventsResponse,
+  MatchStartResponse,
   MatchSummary,
   ModelConfigInput,
   ModelConfigView,
@@ -76,11 +78,11 @@ export const api = {
     list: () => http<{ matches: MatchSummary[] }>('/matches'),
     /** 创建对局（episodes>1 时为批量连续训练）：返回同批次全部 id，firstId 为首场 */
     create: (input: { environmentId: string; bindings: Array<{ agentId: string; modelConfigId: string }> }) =>
-      http<{ ids: string[]; firstId: string; status: string; episodes: number }>('/matches', {
+      http<MatchCreateResponse>('/matches', {
         method: 'POST',
         body: input,
       }),
-    start: (id: string) => http<{ id: string; status: string }>(`/matches/${id}/start`, { method: 'POST' }),
+    start: (id: string) => http<MatchStartResponse>(`/matches/${id}/start`, { method: 'POST' }),
     get: (id: string) => http<MatchDetail>(`/matches/${id}`),
     events: (id: string, since = 0) => http<MatchEventsResponse>(`/matches/${id}/events?since=${since}`),
   },
