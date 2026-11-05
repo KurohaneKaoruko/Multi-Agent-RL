@@ -50,7 +50,8 @@ export function parseAttackDetection(content: string): boolean | null {
       const parsed = JSON.parse(candidate) as Record<string, unknown>
       if (typeof parsed?.is_phishing === 'boolean') return parsed.is_phishing
       if (typeof parsed?.detected === 'boolean') return parsed.detected
-      if (typeof parsed?.repelled === 'boolean') return !parsed.repelled
+      // 守卫靶场协议：repelled=true 表示守卫成功抵御攻击（= 识破）
+      if (typeof parsed?.repelled === 'boolean') return parsed.repelled
       if (parsed?.verdict === 'phishing' || parsed?.verdict === 'attack') return true
       if (parsed?.verdict === 'legitimate' || parsed?.verdict === 'safe') return false
     } catch {
