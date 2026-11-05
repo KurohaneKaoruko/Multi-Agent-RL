@@ -22,7 +22,8 @@ apps/
             REST（/api/*）+ WebSocket 实时事件流（/api/ws/matches/:id）+
             OpenAPI 文档（/api/docs）+ SQLite（better-sqlite3）持久化
   web/      @marl/web —— React 18 + Vite + Ant Design 控制台
-            环境构建器、对局发起与实时回放、经验库、进化时间线
+            环境构建器、对局发起与实时回放、经验库、进化时间线、
+            批次训练趋势（胜率/平均回合数/团队评分/经验沉淀随批次演进）
 packages/
   engine/   @marl/engine —— 对局引擎核心库（纯库，无 HTTP 依赖）
             事件总线（单调 seq + 回放/订阅）、AgentRuntime、工作区隔离、
@@ -32,7 +33,7 @@ packages/
             事件信封、REST/WS DTO，前后端与引擎三方共用
 ```
 
-数据流：`web → server（REST/WS）→ engine（createMatch）→ 事件流落库 → 经验沉淀（MEMORY/SKILLS Markdown）→ 注入后续对局`。批量连续训练（`episodes ≤ 20`）同批次共享 `batch_id`，前一场经验注入后一场，形成跨对局进化。
+数据流：`web → server（REST/WS）→ engine（createMatch）→ 事件流落库 → 经验沉淀（MEMORY/SKILLS Markdown）→ 注入后续对局`。批量连续训练（`episodes ≤ 20`）同批次共享 `batch_id`，前一场经验注入后一场，形成跨对局进化。训练有效性由 `GET /api/stats/batch-trends` 量化：对既有对局结果与经验索引做批次/多批次聚合（主角胜率、平均回合数、团队评分、经验沉淀量的首末批对比），Web 端在对局列表展开批次行时呈现趋势面板。
 
 ## 快速上手
 

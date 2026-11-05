@@ -19,7 +19,9 @@ import {
   newId,
   validateBindingsForMatch,
   validateEnvironmentRefs,
+  buildBatchTrendReports,
   type AgentBinding,
+  type BatchTrendsResponse,
   type EnvironmentConfig,
   type FieldError,
   type MatchCreateResponse,
@@ -488,6 +490,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       return reply.code(400).send({ error: '缺少 environmentId 查询参数' })
     }
     return { stats: repos.listWinStats(db, query.environmentId) }
+  })
+
+  // 训练趋势统计：既有对局结果 + 经验索引的批次/多批次聚合（不新增采集）
+  app.get('/api/stats/batch-trends', async () => {
+    const inputs = repos.listTrainingInputs(db)
+    const experienceByMatch = repos.countExperienceByMatch(db)
+    const reports = buildBatchTrendReports(inputs, experienceByMatch)
+    const body: BatchTrendsResponse = { reports }
+    return body satisfies BatchTrendsResponse
   })
 
   /* ---------------- experience ---------------- */

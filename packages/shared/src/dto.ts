@@ -99,6 +99,98 @@ export interface ModelConfigView {
   createdAt: number
 }
 
+/* ---------------- 训练趋势统计（批量对局量化反馈） ---------------- */
+
+/** 按 Agent 的胜率条目（批次内） */
+export interface WinRateByAgentEntry {
+  agentId: string
+  wins: number
+  /** 参与的完成场次（分母；平局计入分母） */
+  participations: number
+  /** 胜率 0-1；无完成场次为 null */
+  winRate: number | null
+}
+
+/** 单批次聚合统计（同环境同 batchId 的全部对局） */
+export interface BatchStats {
+  batchId: string
+  environmentId: string
+  environmentName: string
+  paradigm: import('./schema').Paradigm
+  /** 批次内全部场数（含失败/进行中） */
+  matchCount: number
+  completedCount: number
+  failedCount: number
+  /** 有胜者的完成场次（对抗/靶场） */
+  wins: number
+  /** 完成但无胜者（协作范式无胜者概念，平局语义） */
+  draws: number
+  /** 主角 Agent（首场首槽位）胜率 0-1；无完成场次或协作范式（每场无胜者）为 null */
+  protagonistWinRate: number | null
+  winRateByAgent: WinRateByAgentEntry[]
+  /** 平均回合数（完成场次）；无完成为 null */
+  avgRounds: number | null
+  /** 平均团队评分（协作范式）；无数据为 null */
+  avgTeamScore: number | null
+  /** 本批次沉淀的经验条数 */
+  experienceCount: number
+  startedAt: number
+  finishedAt: number | null
+}
+
+/** 趋势数据点：x 轴为批次序号（按开始时间升序） */
+export interface TrendPoint {
+  batchId: string
+  batchIndex: number
+  /** null 表示该批次无此指标数据（如协作范式的胜率） */
+  value: number | null
+}
+
+/** 按 Agent 的胜率演进序列 */
+export interface WinRateByAgentTrend {
+  agentId: string
+  points: TrendPoint[]
+}
+
+/** 首末批对比摘要：训练是否有效的量化结论 */
+export interface BatchTrendSummary {
+  /** 演进中出现的批次总数（同环境） */
+  batchCount: number
+  /** 末批总体胜率 − 首批（0-1）；单批或数据不足为 null */
+  winRateDelta: number | null
+  /** 末批平均回合数 − 首批（负值=收敛变快） */
+  avgRoundsDelta: number | null
+  /** 末批平均团队评分 − 首批（协作范式） */
+  avgTeamScoreDelta: number | null
+  /** 全部批次经验沉淀累计条数 */
+  experienceTotal: number
+}
+
+/** 单环境的批次趋势报告：该环境全部批次的时间序列聚合 */
+export interface BatchTrendReport {
+  environmentId: string
+  environmentName: string
+  paradigm: import('./schema').Paradigm
+  /** 批次统计（按开始时间升序） */
+  batches: BatchStats[]
+  /** 批次总体胜率演进（有胜者完成场次占比；协作范式恒 null） */
+  winRateTrend: TrendPoint[]
+  /** 平均回合数演进 */
+  avgRoundsTrend: TrendPoint[]
+  /** 平均团队评分演进（协作范式） */
+  avgTeamScoreTrend: TrendPoint[]
+  /** 经验沉淀累计演进（逐批累加） */
+  experienceCumulativeTrend: TrendPoint[]
+  /** 关键 Agent 胜率演进（跨批次出现的全部 Agent） */
+  winRateByAgentTrend: WinRateByAgentTrend[]
+  summary: BatchTrendSummary
+}
+
+/** GET /api/stats/batch-trends 响应 */
+export interface BatchTrendsResponse {
+  reports: BatchTrendReport[]
+}
+
 /** 环境对外视图（含模板标记） */
 export interface EnvironmentView {
   id: string

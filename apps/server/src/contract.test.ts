@@ -13,6 +13,7 @@ import {
   MatchEventsResponseSchema,
   MatchStartResponseSchema,
   MatchSummarySchema,
+  type BatchTrendsResponse,
   type MatchCreateResponse,
   type MatchDetail,
   type MatchEventsResponse,
@@ -325,6 +326,59 @@ describe('API 契约（服务端响应 ↔ @marl/shared DTO ↔ web client 类�
       expectExactKeys(events, MATCH_EVENTS_KEYS, 'MatchEventsResponse')
       expect(MatchEventsResponseSchema.parse(events)).toBeDefined()
       expect(events.events.length).toBeGreaterThan(0)
+    } finally {
+      await teardown()
+    }
+  })
+
+  it('GET /api/stats/batch-trends 响应符合 BatchTrendsResponse 契约（真实批量对局聚合）', async () => {
+    const { envId, modelId } = await prepare()
+    try {
+      // 先查空批（尚未有任何对局）：空 reports
+      const emptyRes = await app.inject({ method: 'GET', url: '/api/stats/batch-trends' })
+      expect(emptyRes.statusCode).toBe(200)
+      expectExactKeys(emptyRes.json() as object, ['reports'], 'BatchTrendsResponse(空)')
+      expect((emptyRes.json() as BatchTrendsResponse).reports).toEqual([])
+
+      // 创建并跑完一个 3 场批量批次
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/api/matches',
+        payload: {
+          environmentId: envId,
+          bindings: [
+            { agentId: 'a', modelConfigId: modelId },
+            { agentId: 'b', modelConfigId: modelId },
+          ],
+          episodes: 3,
+        },
+      })
+      const ids = (createRes.json() as MatchCreateResponse).ids
+      await app.inject({ method: 'POST', url: `/api/matches/${ids[0]}/start` })
+      const manager = (
+        app as unknown as { arlaf: { manager: { whenSettled: (id: string) => Promise<string> | undefined } } }
+      ).arlaf.manager
+      for (const id of ids) {
+        expect(await manager.whenSettled(id)).toBe('completed')
+      }
+
+      const res = await app.inject({ method: 'GET', url: '/api/stats/batch-trends' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as BatchTrendsResponse
+      expectExactKeys(body, ['reports'], 'BatchTrendsResponse')
+      expect(body.reports).toHaveLength(1)
+      const report = body.reports[0]!
+      expect(report.environmentId).toBe(envId)
+      expect(report.paradigm).toBe('adversarial')
+      expect(report.batches).toHaveLength(1)
+      const batch = report.batches[0]!
+      expect(batch.matchCount).toBe(3)
+      expect(batch.completedCount).toBe(3)
+      expect(batch.avgRounds).not.toBeNull()
+      // 胜者分布（3 场 mock 脚本固定，胜者可判定）
+      expect(batch.wins + batch.draws).toBe(3)
+      expect(report.winRateTrend).toHaveLength(1)
+      expect(report.summary.batchCount).toBe(1)
     } finally {
       await teardown()
     }

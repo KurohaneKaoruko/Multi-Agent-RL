@@ -7,8 +7,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, type MatchSummary } from '../api/client'
 import { groupMatchesIntoRows, statusColor, type MatchRowLikeWithMembers } from '../lib/match-rows'
+import { findReportForBatch } from '../lib/batch-trends'
 import { MATCH_STATUS_LABELS, MENU_LABELS } from '../i18n'
 import LaunchMatchModal from '../components/LaunchMatchModal'
+import BatchTrendPanel from '../components/BatchTrendPanel'
 import PageHeader from '../components/PageHeader'
 
 /** 列表行：单场对局直接一行；同批次对局折叠为首场一行（batchSize>1 时可展开） */
@@ -18,6 +20,9 @@ export default function MatchesPage() {
   const [open, setOpen] = useState(false)
   const matchesQuery = useQuery({ queryKey: ['matches'], queryFn: api.matches.list, refetchInterval: 5000 })
   const matches = matchesQuery.data?.matches ?? []
+  // 训练趋势：批次/多批次聚合（同环境全部批次的胜率、回合数、经验沉淀演进）
+  const trendsQuery = useQuery({ queryKey: ['batch-trends'], queryFn: api.batchTrends, refetchInterval: 10000 })
+  const trendReports = useMemo(() => trendsQuery.data?.reports ?? [], [trendsQuery.data])
 
   // 分组：batchId 相同的连续对局合并（后端按 createdAt DESC 返回，批次成员保持相邻）
   const rows = useMemo<MatchRowView[]>(() => groupMatchesIntoRows(matches), [matches])
@@ -105,7 +110,9 @@ export default function MatchesPage() {
           expandable={{
             rowExpandable: (row) => (row.batchMembers?.length ?? 0) > 1,
             expandedRowRender: (row) => (
-              <Table<MatchSummary>
+              <div>
+                <BatchTrendPanel report={findReportForBatch(trendReports, row.batchId)} />
+                <Table<MatchSummary>
                 rowKey="id"
                 size="small"
                 pagination={false}
@@ -140,7 +147,8 @@ export default function MatchesPage() {
                     render: (ts: number) => new Date(ts).toLocaleString('zh-CN'),
                   },
                 ]}
-              />
+                />
+              </div>
             ),
           }}
         />

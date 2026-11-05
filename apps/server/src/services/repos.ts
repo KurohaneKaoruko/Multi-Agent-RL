@@ -8,6 +8,7 @@ import type {
   ModelConfig,
   ModelConfigInput,
   ModelConfigView,
+  TrainingMatchInput,
   WinStatEntry,
 } from '@marl/shared'
 import { newId } from '@marl/shared'
@@ -377,4 +378,50 @@ export function listExperienceIndex(
     .prepare(`SELECT * FROM experience_index ${where} ORDER BY created_at DESC`)
     .all(...params) as ExperienceDbRow[]
   return rows.map(expRowToMeta)
+}
+
+/* ---------------- 训练趋势统计（批量对局量化反馈） ---------------- */
+
+/** experience_index 按 match_id 分组计数（经验沉淀量随批次变化的数据源） */
+export function countExperienceByMatch(db: Db): Map<string, number> {
+  const rows = db.prepare('SELECT match_id, COUNT(*) AS count FROM experience_index GROUP BY match_id').all() as Array<{
+    match_id: string
+    count: number
+  }>
+  return new Map(rows.map((r) => [r.match_id, r.count]))
+}
+
+/** matches 行 → 趋势统计输入（解析 result_json 的轮数与团队评分；损坏数据容忍为 null） */
+export function matchRowToTrainingInput(db: Db, row: MatchRow): TrainingMatchInput {
+  let rounds: number | null = null
+  let teamScore: number | null = null
+  if (row.result_json) {
+    try {
+      const result = JSON.parse(row.result_json) as { rounds?: unknown[]; verdict?: { teamScore?: number } }
+      rounds = Array.isArray(result.rounds) ? result.rounds.length : null
+      teamScore = result.verdict?.teamScore ?? null
+    } catch {
+      /* 损坏的 result_json 视为无数据 */
+    }
+  }
+  const env = getEnvironment(db, row.environment_id)
+  return {
+    id: row.id,
+    environmentId: row.environment_id,
+    environmentName: row.environment_name,
+    paradigm: env?.paradigm ?? 'adversarial',
+    status: row.status as MatchStatus,
+    winnerAgentId: row.winner_agent_id,
+    teamScore,
+    agentIds: JSON.parse(row.agent_ids) as string[],
+    batchId: row.batch_id,
+    createdAt: row.created_at,
+    finishedAt: row.finished_at,
+    rounds,
+  }
+}
+
+/** 全部对局的趋势统计输入（列表） */
+export function listTrainingInputs(db: Db): TrainingMatchInput[] {
+  return listMatchRows(db).map((row) => matchRowToTrainingInput(db, row))
 }

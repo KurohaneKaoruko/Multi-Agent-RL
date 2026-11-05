@@ -5,6 +5,7 @@ import type {
   EnvironmentView,
   ExperienceDocDetail,
   ExperienceDocMeta,
+  BatchTrendsResponse,
   FieldError,
   MatchCreateResponse,
   MatchDetail,
@@ -103,6 +104,7 @@ export const api = {
     exportUrl: (envId: string, agentId: string) => `/api/workspaces/${envId}/${agentId}/export`,
   },
   stats: (environmentId: string) => http<{ stats: WinStatEntry[] }>(`/stats?environmentId=${environmentId}`),
+  batchTrends: () => http<BatchTrendsResponse>('/stats/batch-trends'),
   experience: {
     list: (query: { environmentId?: string; agentId?: string }) => {
       const params = new URLSearchParams()
