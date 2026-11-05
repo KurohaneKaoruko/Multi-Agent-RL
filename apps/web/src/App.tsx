@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Card, Col, Row, Space, Typography } from 'antd'
+import { filterByParadigm } from './lib/paradigm'
 import { Link } from 'react-router-dom'
 import { api } from './api/client'
 import StatCard from './components/StatCard'
@@ -47,9 +48,9 @@ export default function App() {
   const matchQuery = useQuery({ queryKey: ['matches'], queryFn: api.matches.list })
 
   const envs = envQuery.data?.environments ?? []
-  const adversarialCount = envs.filter((e) => e.paradigm === 'adversarial').length
-  const drillCount = envs.filter((e) => e.paradigm === 'drill').length
-  const cooperativeCount = envs.filter((e) => e.paradigm === 'cooperative').length
+  const adversarialCount = filterByParadigm(envs, 'adversarial').length
+  const drillCount = filterByParadigm(envs, 'drill').length
+  const cooperativeCount = filterByParadigm(envs, 'cooperative').length
   const modelCount = modelQuery.data?.models.length ?? 0
   const matches = matchQuery.data?.matches ?? []
   const completed = matches.filter((m) => m.status === 'completed').length

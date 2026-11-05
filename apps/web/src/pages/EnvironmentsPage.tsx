@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError, api } from '../api/client'
 import { COMMON_MESSAGES, TOPOLOGY_LABELS, MENU_LABELS } from '../i18n'
+import { filterByParadigm } from '../lib/paradigm'
 import PageHeader from '../components/PageHeader'
 
 export default function EnvironmentsPage() {
@@ -17,8 +18,8 @@ export default function EnvironmentsPage() {
 
   const envQuery = useQuery({ queryKey: ['environments'], queryFn: api.environments.list })
   const templatesQuery = useQuery({ queryKey: ['templates'], queryFn: api.environments.templates })
-  const environments = (envQuery.data?.environments ?? []).filter((e) => e.paradigm === 'adversarial')
-  const templates = (templatesQuery.data?.templates ?? []).filter((t) => t.paradigm === 'adversarial')
+  const environments = filterByParadigm(envQuery.data?.environments ?? [], 'adversarial')
+  const templates = filterByParadigm(templatesQuery.data?.templates ?? [], 'adversarial')
 
   const invalidate = (): void => void queryClient.invalidateQueries({ queryKey: ['environments'] })
   const showApiError = (err: unknown): void => {

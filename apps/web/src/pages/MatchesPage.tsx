@@ -6,18 +6,13 @@ import { Button, Card, Table, Tag } from 'antd'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, type MatchSummary } from '../api/client'
+import { groupMatchesIntoRows, statusColor, type MatchRowLikeWithMembers } from '../lib/match-rows'
 import { MATCH_STATUS_LABELS, MENU_LABELS } from '../i18n'
 import LaunchMatchModal from '../components/LaunchMatchModal'
 import PageHeader from '../components/PageHeader'
 
-const statusColor = (status: string): string =>
-  status === 'completed' ? 'green' : status === 'failed' ? 'red' : status === 'running' ? 'blue' : 'default'
-
 /** 列表行：单场对局直接一行；同批次对局折叠为首场一行（batchSize>1 时可展开） */
-interface MatchRowView extends MatchSummary {
-  /** 批量行：本批次全部对局（按场次序号排列） */
-  batchMembers?: MatchSummary[]
-}
+type MatchRowView = MatchRowLikeWithMembers<MatchSummary>
 
 export default function MatchesPage() {
   const [open, setOpen] = useState(false)
@@ -25,25 +20,7 @@ export default function MatchesPage() {
   const matches = matchesQuery.data?.matches ?? []
 
   // 分组：batchId 相同的连续对局合并（后端按 createdAt DESC 返回，批次成员保持相邻）
-  const rows = useMemo<MatchRowView[]>(() => {
-    const result: MatchRowView[] = []
-    const batchMap = new Map<string, MatchRowView>()
-    for (const m of matches) {
-      if (m.batchId && m.batchSize && m.batchSize > 1) {
-        const existing = batchMap.get(m.batchId)
-        if (existing) {
-          existing.batchMembers!.push(m)
-        } else {
-          const row: MatchRowView = { ...m, batchMembers: [m] }
-          batchMap.set(m.batchId, row)
-          result.push(row)
-        }
-      } else {
-        result.push({ ...m })
-      }
-    }
-    return result
-  }, [matches])
+  const rows = useMemo<MatchRowView[]>(() => groupMatchesIntoRows(matches), [matches])
 
   return (
     <div>

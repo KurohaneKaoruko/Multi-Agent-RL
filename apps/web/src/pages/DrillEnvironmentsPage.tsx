@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError, api } from '../api/client'
 import { COMMON_MESSAGES, MENU_LABELS } from '../i18n'
+import { filterByParadigm } from '../lib/paradigm'
 import PageHeader from '../components/PageHeader'
 
 export default function DrillEnvironmentsPage() {
@@ -17,8 +18,8 @@ export default function DrillEnvironmentsPage() {
 
   const envQuery = useQuery({ queryKey: ['environments'], queryFn: api.environments.list })
   const templatesQuery = useQuery({ queryKey: ['templates'], queryFn: api.environments.templates })
-  const environments = (envQuery.data?.environments ?? []).filter((e) => e.paradigm === 'drill')
-  const templates = (templatesQuery.data?.templates ?? []).filter((t) => t.paradigm === 'drill')
+  const environments = filterByParadigm(envQuery.data?.environments ?? [], 'drill')
+  const templates = filterByParadigm(templatesQuery.data?.templates ?? [], 'drill')
 
   const invalidate = (): void => void queryClient.invalidateQueries({ queryKey: ['environments'] })
   const showApiError = (err: unknown): void => {
