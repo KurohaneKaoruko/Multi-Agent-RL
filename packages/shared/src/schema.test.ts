@@ -81,6 +81,64 @@ describe('EnvironmentConfigSchema', () => {
   })
 })
 
+describe('范式约束（paradigmRefine）', () => {
+  /** 单角色单 Agent 的演练靶场配置（CTF 纯靶场形状） */
+  function drillEnv(): EnvironmentConfig {
+    return {
+      id: 'env-drill',
+      name: '夺旗靶场',
+      description: '',
+      paradigm: 'drill',
+      topology: 'melee',
+      roles: [{ id: 'investigator', name: '调查员', systemPrompt: 's', goal: 'g', answerFormat: 'free' }],
+      agents: [{ id: 'challenger-a', name: '挑战者', roleId: 'investigator', startRound: 1 }],
+      turns: { rounds: 2, order: ['challenger-a'] },
+      workspaceTemplate: { mode: 'private', files: [] },
+      toolsEnabled: true,
+      exchanges: [],
+      outcome: { mode: 'rule', evaluator: 'flag-check', params: { flags: ['FLAG{x}'] } },
+      experience: { enabled: false, tokenBudget: 2000, recentMemoryLimit: 3 },
+    }
+  }
+
+  it('演练靶场允许仅 1 名外部挑战者（单 Agent 合法）', () => {
+    const parsed = EnvironmentConfigSchema.safeParse(drillEnv())
+    expect(parsed.success).toBe(true)
+    if (parsed.success) expect(parsed.data.paradigm).toBe('drill')
+    // 引用一致性校验同样通过（无交换物的单 Agent 环境）
+    expect(validateEnvironmentRefs(drillEnv())).toEqual([])
+  })
+
+  it('同一单 Agent 配置切回对抗范式则被拒绝', () => {
+    const env = { ...drillEnv(), paradigm: 'adversarial' as const }
+    const parsed = EnvironmentConfigSchema.safeParse(env)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      const messages = parsed.error.issues.map((i) => i.message)
+      expect(messages.some((m) => m.includes('至少需要 2 名智能体'))).toBe(true)
+    }
+  })
+
+  it('协作环境判定方式必须为 AI 裁判（rule 被拒绝且指向 outcome 字段）', () => {
+    const env = {
+      ...validEnv(),
+      paradigm: 'cooperative' as const,
+      outcome: { mode: 'rule', evaluator: 'ai-flavor', params: {} },
+    }
+    const parsed = EnvironmentConfigSchema.safeParse(env)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      const issue = parsed.error.issues.find((i) => i.path.join('.') === 'outcome')
+      expect(issue?.message).toContain('AI 裁判')
+    }
+  })
+
+  it('协作环境 + judge 判定 + 多 Agent 合法', () => {
+    const env = { ...validEnv(), paradigm: 'cooperative' as const, outcome: { mode: 'judge', rubric: '按质量打分' } }
+    expect(EnvironmentConfigSchema.safeParse(env).success).toBe(true)
+  })
+})
+
 describe('ModelConfigSchema / AgentBindingSchema', () => {
   it('接受合法模型配置', () => {
     const parsed = ModelConfigSchema.safeParse({

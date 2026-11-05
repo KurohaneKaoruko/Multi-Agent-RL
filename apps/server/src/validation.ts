@@ -20,6 +20,9 @@ function zhMessage(issue: z.ZodIssue): string {
       return `取值不合法，允许：${issue.options.join(' / ')}`
     case 'unrecognized_keys':
       return `包含未知字段：${issue.keys.join(', ')}`
+    case 'custom':
+      // superRefine 的范式约束等自定义校验：透传原始中文提示
+      return issue.message || '字段校验未通过'
     default:
       return '字段校验未通过'
   }

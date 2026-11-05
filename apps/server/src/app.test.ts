@@ -407,4 +407,96 @@ describe('ARLAF API 集成（9.1–9.5）', () => {
       }
     }
   }, 20000)
+
+  it('靶场范式构建器校验（单 Agent 允许 / 协作必须裁判）与导入导出 round-trip 深一致', async () => {
+    await setup()
+    try {
+      // ---- 演练靶场：单挑战者 + flag-check 判定 → 允许创建 ----
+      const drillEnv = {
+        id: 'env-drill-app',
+        name: '夺旗靶场（构建器）',
+        description: '单挑战者纯沙盒',
+        paradigm: 'drill',
+        topology: 'melee',
+        roles: [{ id: 'investigator', name: '调查员', systemPrompt: '排查旗标', goal: '找出全部 FLAG', answerFormat: 'free' }],
+        agents: [{ id: 'challenger-a', name: '挑战者', roleId: 'investigator', startRound: 1 }],
+        turns: { rounds: 2, order: ['challenger-a'] },
+        toolsEnabled: true,
+        workspaceTemplate: { mode: 'private', files: [{ path: 'docs/log.txt', content: 'FLAG{app_ctf}' }] },
+        exchanges: [],
+        outcome: { mode: 'rule', evaluator: 'flag-check', params: { flags: ['FLAG{app_ctf}'] } },
+        experience: { enabled: false, tokenBudget: 2000, recentMemoryLimit: 3 },
+      }
+      const drillRes = await app.inject({ method: 'POST', url: '/api/environments', payload: drillEnv })
+      expect(drillRes.statusCode).toBe(201)
+
+      // ---- 同一单 Agent 配置切回对抗范式 → 400（至少 2 名智能体）----
+      const advOne = { ...drillEnv, id: 'env-adv-one', paradigm: 'adversarial' }
+      const advOneRes = await app.inject({ method: 'POST', url: '/api/environments', payload: advOne })
+      expect(advOneRes.statusCode).toBe(400)
+      const advOneBody = advOneRes.json() as { fields: Array<{ path: string; message: string }> }
+      expect(advOneBody.fields.some((f) => f.path === 'agents')).toBe(true)
+
+      // ---- 协作范式 + 规则判定 → 400（必须 AI 裁判，错误指向 outcome）----
+      const coopRule = {
+        ...drillEnv,
+        id: 'env-coop-rule',
+        paradigm: 'cooperative',
+        roles: [
+          { id: 'r1', name: '角色一', systemPrompt: 's', goal: 'g', answerFormat: 'free' },
+          { id: 'r2', name: '角色二', systemPrompt: 's', goal: 'g', answerFormat: 'free' },
+        ],
+        agents: [
+          { id: 'a', name: 'A', roleId: 'r1', startRound: 1 },
+          { id: 'b', name: 'B', roleId: 'r2', startRound: 1 },
+        ],
+        turns: { rounds: 1, order: ['a', 'b'] },
+        outcome: { mode: 'rule', evaluator: 'ai-flavor', params: {} },
+      }
+      const coopRes = await app.inject({ method: 'POST', url: '/api/environments', payload: coopRule })
+      expect(coopRes.statusCode).toBe(400)
+      const coopBody = coopRes.json() as { fields: Array<{ path: string; message: string }> }
+      const outcomeIssue = coopBody.fields.find((f) => f.path === 'outcome')
+      expect(outcomeIssue?.message).toContain('AI 裁判')
+
+      // ---- 导入导出 round-trip：导出的 config 除 id 外与导入后环境逐字段一致 ----
+      const exportRes = await app.inject({ method: 'GET', url: '/api/environments/env-drill-app/export' })
+      expect(exportRes.statusCode).toBe(200)
+      const exported = exportRes.json() as { kind: string; version: number; config: Record<string, unknown> }
+      expect(exported.kind).toBe('marl-environment')
+      expect(exported.version).toBe(1)
+      expect((exported.config as { id: string }).id).toBe('env-drill-app')
+
+      const importRes = await app.inject({
+        method: 'POST',
+        url: '/api/environments/import',
+        payload: { config: exported.config },
+      })
+      expect(importRes.statusCode).toBe(201)
+      const imported = importRes.json() as { id: string }
+      expect(imported.id).not.toBe('env-drill-app')
+
+      const detailRes = await app.inject({ method: 'GET', url: `/api/environments/${imported.id}` })
+      expect(detailRes.statusCode).toBe(200)
+      const detail = detailRes.json() as { config: Record<string, unknown> }
+      // 除 id（导入时重新分配）外逐字段一致
+      const stripId = (config: Record<string, unknown>): Record<string, unknown> => {
+        const copy = { ...config }
+        delete copy.id
+        return copy
+      }
+      expect(stripId(detail.config)).toEqual(stripId(exported.config))
+    } finally {
+      await teardown()
+      // rm 偶发与异步写盘竞态，重试以确保清理
+      for (let i = 0; i < 3; i++) {
+        try {
+          await rm(dataDir, { recursive: true, force: true })
+          break
+        } catch {
+          await new Promise((r) => setTimeout(r, 150))
+        }
+      }
+    }
+  }, 20000)
 })
